@@ -258,7 +258,6 @@ $reader = (New-Object System.Xml.XmlNodeReader $xaml)
 $Window = [Windows.Markup.XamlReader]::Load($reader)
 
 # Map XAML elements to PowerShell variables
-$MainTabs = $Window.FindName("MainTabs")
 $SearchBox = $Window.FindName("SearchBox")
 $SearchBtn = $Window.FindName("SearchBtn")
 $DiscoverGrid = $Window.FindName("DiscoverGrid")
@@ -328,21 +327,21 @@ $bgJobBlock = {
         
         $headerLine = $raw[$headerIdx]
         
-        # 2. Find column start indices using Winget's header gaps
-        $colIndices = @(0)
-        $matches = [regex]::Matches($headerLine, '\s{2,}(?<col>\S)')
-        foreach ($m in $matches) {
-            $colIndices += $m.Groups['col'].Index
+        # 2. Find column start indices using word boundaries (\S+ matches any contiguous word)
+        # This completely solves the "missing column" bug, regardless of Winget's spacing.
+        $colIndices = @()
+        $headerMatches = [regex]::Matches($headerLine, '\S+')
+        foreach ($m in $headerMatches) {
+            $colIndices += $m.Index
         }
+        
+        if ($colIndices.Count -eq 0) { return $parsed }
         
         # 3. Parse data lines using strict fixed-width indexing
         for ($i = $headerIdx + 2; $i -lt $raw.Count; $i++) {
             $line = $raw[$i]
             if ([string]::IsNullOrWhiteSpace($line)) { continue }
             if ($line -match "^[0-9]+ upgrades available") { continue }
-            
-            # Restore strict column alignment if UTF-8 was corrupted (ΓÇª is 3 chars, … is 1 char)
-            $line = $line.Replace("ΓÇª", "…").Replace("ΓÇö", "-")
             
             $cols = @()
             for ($c = 0; $c -lt $colIndices.Count; $c++) {
@@ -354,9 +353,13 @@ $bgJobBlock = {
                     if ($start + $len -gt $line.Length) { $len = $line.Length - $start }
                     
                     $val = $line.Substring($start, $len).Trim()
-                    # Strip the ugly '…' from the final UI output
-                    $val = $val.TrimEnd("…")
-                    $cols += $val
+                    
+                    # Strip the ugly ellipsis and OEM encoding artifacts safely using Regex Unicode Hex
+                    $val = $val -replace '(\u0393\u00C7\u00AA)+$', '' # Removes ΓÇª
+                    $val = $val -replace '(\u0393\u00C7\u00F6)+$', '' # Removes ΓÇö
+                    $val = $val -replace '\u2026+$', ''             # Removes …
+                    
+                    $cols += $val.Trim()
                 }
             }
             
@@ -368,7 +371,7 @@ $bgJobBlock = {
                 $source = ""
                 $hasUpdate = $false
                 
-                # Assign Extra (Available) and Source based on column count
+                # Assign Extra (Available) and Source dynamically based on the parsed headers
                 if ($cols.Count -ge 5) {
                     $extra = $cols[3]
                     $source = $cols[4]
