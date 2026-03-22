@@ -636,6 +636,16 @@ $SearchBtn.Add_Click({
     }
 })
 
+$SearchBox.Add_KeyDown({
+    if ($_.Key -eq 'Enter') {
+        $query = $SearchBox.Text
+        if (![string]::IsNullOrWhiteSpace($query)) {
+            $DiscoverGrid.ItemsSource = $null
+            Start-WingetJob -Action "Search" -Query $query -Id "" -StatusMsg "Searching Winget for '$query'..."
+        }
+    }
+})
+
 $AddToQueueBtn.Add_Click({
     if ($DiscoverGrid.SelectedItems.Count -eq 0) {
         [System.Windows.MessageBox]::Show("Please select packages from the search results first.")
