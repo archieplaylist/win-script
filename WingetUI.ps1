@@ -29,6 +29,54 @@ if (-not $RunHidden) {
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Drawing
 
+# --- Pre-flight Check: Ensure Winget is Installed ---
+if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+    $msgResult = [System.Windows.MessageBox]::Show("Windows Package Manager (Winget) was not found on this system.`n`nWould you like to automatically download and install it now?", "Winget Missing", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    
+    if ($msgResult -eq 'Yes') {
+        # Create a mini Dark Mode popup to show while downloading
+        $dlWindowXaml = @"
+        <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Title="Installing Winget..." Width="400" Height="120" WindowStartupLocation="CenterScreen" WindowStyle="ToolWindow" Background="#1E1E1E" Foreground="#D4D4D4">
+            <StackPanel VerticalAlignment="Center" Margin="20">
+                <TextBlock Text="Downloading and installing Winget..." Margin="0,0,0,10" HorizontalAlignment="Center" FontSize="14" FontWeight="SemiBold"/>
+                <ProgressBar IsIndeterminate="True" Height="15" Background="#2D2D30" Foreground="#007ACC" BorderThickness="0"/>
+            </StackPanel>
+        </Window>
+"@
+        $dlReader = (New-Object System.Xml.XmlNodeReader ([xml]$dlWindowXaml))
+        $dlWindow = [Windows.Markup.XamlReader]::Load($dlReader)
+        $dlWindow.Show()
+        
+        # Force the UI to draw on the screen before the thread freezes for the download
+        try { $dlWindow.Dispatcher.Invoke([Action]{}, [System.Windows.Threading.DispatcherPriority]::Render) } catch {}
+        
+        try {
+            $ProgressPreference = 'SilentlyContinue' # Hides the raw console download bar to speed up Invoke-WebRequest
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            
+            $bundlePath = Join-Path $env:TEMP "winget.msixbundle"
+            
+            # Download the latest offline installer bundle directly from Microsoft's GitHub
+            Invoke-WebRequest -Uri "https://github.com/microsoft/winget-cli/releases/latest/download/Microsoft.DesktopAppInstaller_8wekyb3d8bbwe.msixbundle" -OutFile $bundlePath -UseBasicParsing
+            
+            # Install the Appx Package
+            Add-AppxPackage -Path $bundlePath
+            Remove-Item $bundlePath -ErrorAction SilentlyContinue
+            
+            $dlWindow.Close()
+            [System.Windows.MessageBox]::Show("Winget was installed successfully! Starting Mini WingetUI...", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+        } catch {
+            $dlWindow.Close()
+            [System.Windows.MessageBox]::Show("Failed to install Winget. Error: $($_.Exception.Message)`n`nPlease install 'App Installer' manually from the Microsoft Store.", "Install Failed", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+            exit
+        }
+    } else {
+        # User clicked No, so we must exit as the app cannot run without Winget
+        exit
+    }
+}
+# ----------------------------------------------------
+
 # 1. Define the UI layout using XAML
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -225,13 +273,14 @@ Add-Type -AssemblyName System.Drawing
                     </DataGrid>
                     
                     <!-- Row 4: Final Actions -->
-                    <StackPanel Orientation="Horizontal" Grid.Row="4" Margin="0,10,0,0" HorizontalAlignment="Right">
-                        <CheckBox Name="AdminInstallCheck" Content="Install for All Users (Admin)" IsChecked="True" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{StaticResource TextForeground}"/>
-                        <Button Name="ImportQueueBtn" Content="Import Queue" Padding="8" Width="110" Margin="0,0,10,0"/>
-                        <Button Name="ExportQueueBtn" Content="Export Queue" Padding="8" Width="110" Margin="0,0,10,0"/>
-                        <Button Name="RemoveFromQueueBtn" Content="Remove from Queue" Padding="8" Width="130" Margin="0,0,10,0"/>
-                        <Button Name="InstallBtn" Content="Install Queued Packages" Padding="8" Width="180" FontWeight="Bold" Foreground="#73D96B"/>
-                    </StackPanel>
+                    <WrapPanel Grid.Row="4" Margin="0,10,0,0" HorizontalAlignment="Right">
+                        <CheckBox Name="CreateRestorePointInstallCheck" Content="Create Restore Point" IsChecked="False" VerticalAlignment="Center" Margin="0,0,15,5" Foreground="{StaticResource TextForeground}"/>
+                        <CheckBox Name="AdminInstallCheck" Content="Install for All Users (Admin)" IsChecked="True" VerticalAlignment="Center" Margin="0,0,15,5" Foreground="{StaticResource TextForeground}"/>
+                        <Button Name="ImportQueueBtn" Content="Import Queue" Padding="8" Width="110" Margin="0,0,10,5"/>
+                        <Button Name="ExportQueueBtn" Content="Export Queue" Padding="8" Width="110" Margin="0,0,10,5"/>
+                        <Button Name="RemoveFromQueueBtn" Content="Remove from Queue" Padding="8" Width="130" Margin="0,0,10,5"/>
+                        <Button Name="InstallBtn" Content="Install Queued Packages" Padding="8" Width="180" FontWeight="Bold" Foreground="#73D96B" Margin="0,0,0,5"/>
+                    </WrapPanel>
                 </Grid>
             </TabItem>
             
@@ -300,13 +349,100 @@ Add-Type -AssemblyName System.Drawing
                         </TabItem>
                     </TabControl>
 
-                    <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,10,0,0" HorizontalAlignment="Right">
-                        <Button Name="UninstallBtn" Content="Uninstall Selected" Padding="8" Width="140" Foreground="#FF6B6B" FontWeight="Bold" Margin="0,0,10,0"/>
-                        <Button Name="UpdateBtn" Content="Update Selected" Padding="8" Width="140" Foreground="#6BA4FF" FontWeight="Bold" Margin="0,0,10,0"/>
-                        <Button Name="UpdateAllBtn" Content="Update All Apps" Padding="8" Width="140" Foreground="#73D96B" FontWeight="Bold"/>
-                    </StackPanel>
+                    <WrapPanel Grid.Row="2" Margin="0,10,0,0" HorizontalAlignment="Right">
+                        <CheckBox Name="CreateRestorePointUpdateCheck" Content="Create Restore Point" IsChecked="False" VerticalAlignment="Center" Margin="0,0,15,5" Foreground="{StaticResource TextForeground}"/>
+                        <Button Name="UninstallBtn" Content="Uninstall Selected" Padding="8" Width="140" Foreground="#FF6B6B" FontWeight="Bold" Margin="0,0,10,5"/>
+                        <Button Name="UpdateBtn" Content="Update Selected" Padding="8" Width="140" Foreground="#6BA4FF" FontWeight="Bold" Margin="0,0,10,5"/>
+                        <Button Name="UpdateAllBtn" Content="Update All Apps" Padding="8" Width="140" Foreground="#73D96B" FontWeight="Bold" Margin="0,0,0,5"/>
+                    </WrapPanel>
                 </Grid>
             </TabItem>
+            
+            <!-- NEW: Utilities Tab -->
+            <TabItem Header="Utilities">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="15,20,15,15">
+                        <TextBlock Text="System Utilities" FontWeight="Bold" FontSize="18" Foreground="{StaticResource AccentColor}" Margin="0,0,0,5"/>
+                        <TextBlock Name="UtilAdminWarning" Text="Administrator privileges are required for these tools." Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                        
+                        <UniformGrid Columns="2">
+                            <!-- Box 1 -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,15">
+                                <StackPanel>
+                                    <TextBlock Text="System Repair &amp; Maintenance" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Run system corruption scans and fix damaged Windows components." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <WrapPanel>
+                                        <Button Name="UtilSysScanBtn" Content="Run System Scan (SFC &amp; DISM)" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilResetWUBtn" Content="Reset Windows Update" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilRestorePointBtn" Content="Create System Restore Point" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilOpenRestoreBtn" Content="Open System Restore" Padding="10,8" Margin="0,0,10,10"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Box 2 -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="10,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="App &amp; Package Managers" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Repair broken Store apps or reset Winget repositories." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <WrapPanel>
+                                        <Button Name="UtilWingetRepairBtn" Content="Repair Winget Sources" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilStoreRepairBtn" Content="Repair Microsoft Store" Padding="10,8" Margin="0,0,10,10"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Box 3 -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,15">
+                                <StackPanel>
+                                    <TextBlock Text="System Cleanup" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Free up disk space and remove unnecessary system logs." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <WrapPanel>
+                                        <Button Name="UtilDiskCleanupBtn" Content="Deep Disk Cleanup" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilClearLogsBtn" Content="Clear Event Viewer Logs" Padding="10,8" Margin="0,0,10,10"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Box 4 -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="10,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Desktop &amp; UI Repair" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Fix blank icons and broken image thumbnails by rebuilding the cache." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <WrapPanel>
+                                        <Button Name="UtilIconCacheBtn" Content="Rebuild Icon &amp; Thumbnail Cache" Padding="10,8" Margin="0,0,10,10"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Box 5 -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,15">
+                                <StackPanel>
+                                    <TextBlock Text="Network Tools" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Fix network connectivity issues or enable legacy sharing protocols." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <WrapPanel>
+                                        <Button Name="UtilResetNetBtn" Content="Reset Network Adapters" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilSMBBtn" Content="Enable SMBv1 Protocol" Padding="10,8" Margin="0,0,10,10"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Box 6 -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="10,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Hardware &amp; Drivers" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Scan Microsoft Update for missing or outdated hardware drivers and automatically install them." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <WrapPanel>
+                                        <Button Name="UtilDriverBtn" Content="Update Hardware Drivers" Padding="10,8" Margin="0,0,10,10"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
+                        </UniformGrid>
+                        
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            
         </TabControl>
         
         <!-- Live Console Log Expander -->
@@ -345,14 +481,35 @@ $QueueMenuDetails = $Window.FindName("QueueMenuDetails")
 $RemoveFromQueueBtn = $Window.FindName("RemoveFromQueueBtn")
 $ImportQueueBtn = $Window.FindName("ImportQueueBtn")
 $ExportQueueBtn = $Window.FindName("ExportQueueBtn")
+$CreateRestorePointInstallCheck = $Window.FindName("CreateRestorePointInstallCheck")
 $AdminInstallCheck = $Window.FindName("AdminInstallCheck")
 $InstallBtn = $Window.FindName("InstallBtn")
+
+# Utilities UI Map
+$UtilAdminWarning = $Window.FindName("UtilAdminWarning")
+$UtilSysScanBtn = $Window.FindName("UtilSysScanBtn")
+$UtilResetWUBtn = $Window.FindName("UtilResetWUBtn")
+$UtilRestorePointBtn = $Window.FindName("UtilRestorePointBtn")
+$UtilOpenRestoreBtn = $Window.FindName("UtilOpenRestoreBtn")
+$UtilResetNetBtn = $Window.FindName("UtilResetNetBtn")
+$UtilSMBBtn = $Window.FindName("UtilSMBBtn")
+$UtilDriverBtn = $Window.FindName("UtilDriverBtn")
+$UtilWingetRepairBtn = $Window.FindName("UtilWingetRepairBtn")
+$UtilStoreRepairBtn = $Window.FindName("UtilStoreRepairBtn")
+$UtilDiskCleanupBtn = $Window.FindName("UtilDiskCleanupBtn")
+$UtilClearLogsBtn = $Window.FindName("UtilClearLogsBtn")
+$UtilIconCacheBtn = $Window.FindName("UtilIconCacheBtn")
+
+$CreateRestorePointUpdateCheck = $Window.FindName("CreateRestorePointUpdateCheck")
 
 # --- Apply Admin Status to UI ---
 if ($isActualAdmin) {
     $Window.Title = "Mini WingetUI (Administrator)"
     $AdminInstallCheck.IsChecked = $true
     $AdminInstallCheck.IsEnabled = $true
+    
+    $CreateRestorePointInstallCheck.IsEnabled = $true
+    $CreateRestorePointUpdateCheck.IsEnabled = $true
 } else {
     $Window.Title = "Mini WingetUI (Standard User)"
     $AdminInstallCheck.IsChecked = $false
@@ -360,6 +517,29 @@ if ($isActualAdmin) {
     $AdminInstallCheck.Content = "Install for Current User (No Admin)"
     $AdminInstallCheck.ToolTip = "You declined the Administrator prompt. Installations are limited to the current user."
     $AdminInstallCheck.Foreground = "#888888"
+    
+    $CreateRestorePointInstallCheck.IsEnabled = $false
+    $CreateRestorePointInstallCheck.ToolTip = "Administrator privileges are required to create Restore Points."
+    $CreateRestorePointInstallCheck.Foreground = "#888888"
+    
+    $CreateRestorePointUpdateCheck.IsEnabled = $false
+    $CreateRestorePointUpdateCheck.ToolTip = "Administrator privileges are required to create Restore Points."
+    $CreateRestorePointUpdateCheck.Foreground = "#888888"
+    
+    # Disable Utilities if not admin
+    $UtilAdminWarning.Visibility = 'Visible'
+    $UtilSysScanBtn.IsEnabled = $false
+    $UtilResetWUBtn.IsEnabled = $false
+    $UtilRestorePointBtn.IsEnabled = $false
+    $UtilOpenRestoreBtn.IsEnabled = $false
+    $UtilResetNetBtn.IsEnabled = $false
+    $UtilSMBBtn.IsEnabled = $false
+    $UtilDriverBtn.IsEnabled = $false
+    $UtilWingetRepairBtn.IsEnabled = $false
+    $UtilStoreRepairBtn.IsEnabled = $false
+    $UtilDiskCleanupBtn.IsEnabled = $false
+    $UtilClearLogsBtn.IsEnabled = $false
+    $UtilIconCacheBtn.IsEnabled = $false
 }
 
 $RefreshInstalledBtn = $Window.FindName("RefreshInstalledBtn")
@@ -398,7 +578,7 @@ $script:AllInstalledApps = $null
 
 # 4. Define the Universal Background Job
 $bgJobBlock = {
-    param($Action, $Query, $Id, $Hash, $IsAdmin)
+    param($Action, $Query, $Id, $Hash, $IsAdmin, $CreateRestore)
     
     # Force PowerShell to read external Winget output using UTF-8 to prevent 'ΓÇª' encoding issues
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -534,6 +714,16 @@ $bgJobBlock = {
                 $Hash.Result = ConvertFrom-WingetOutput $raw
             }
             'Install' {
+                if ($CreateRestore) {
+                    $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before installation...")
+                    try {
+                        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
+                        Checkpoint-Computer -Description "Mini WingetUI Install" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                        $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
+                    } catch {
+                        $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
+                    }
+                }
                 foreach ($targetId in @($Id)) {
                     $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget install $targetId")
                     $wingetArgs = @("install", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
@@ -558,6 +748,16 @@ $bgJobBlock = {
                 $Hash.Result = "Success"
             }
             'Uninstall' {
+                if ($CreateRestore) {
+                    $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before uninstallation...")
+                    try {
+                        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
+                        Checkpoint-Computer -Description "Mini WingetUI Uninstall" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                        $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
+                    } catch {
+                        $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
+                    }
+                }
                 foreach ($targetId in @($Id)) {
                     $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget uninstall $targetId")
                     $wingetArgs = @("uninstall", "--id", $targetId, "--exact", "--silent", "--disable-interactivity")
@@ -575,6 +775,16 @@ $bgJobBlock = {
                 $Hash.Result = "Success"
             }
             'Update' {
+                if ($CreateRestore) {
+                    $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before update...")
+                    try {
+                        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
+                        Checkpoint-Computer -Description "Mini WingetUI Update" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                        $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
+                    } catch {
+                        $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
+                    }
+                }
                 foreach ($targetId in @($Id)) {
                     $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget upgrade $targetId")
                     $wingetArgs = @("upgrade", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
@@ -602,6 +812,213 @@ $bgJobBlock = {
                 }
                 $Hash.Result = $raw -join "`r`n"
             }
+            # --- NEW UTILITY COMMANDS ---
+            'UtilSystemScan' {
+                $Hash.LogQueue.Enqueue(">>> Running DISM Component Store Cleanup and Repair...")
+                $Hash.LogQueue.Enqueue(">>> (This may take several minutes to complete)")
+                & DISM.exe /Online /Cleanup-image /Restorehealth 2>&1 | ForEach-Object {
+                    $l = $_.ToString().Trim()
+                    if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
+                }
+                
+                $Hash.LogQueue.Enqueue("`r`n>>> Running System File Checker (SFC)...")
+                & sfc /scannow 2>&1 | ForEach-Object {
+                    $l = $_.ToString().Trim()
+                    if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
+                }
+                $Hash.Result = "Success"
+            }
+            'UtilResetWU' {
+                $Hash.LogQueue.Enqueue(">>> Stopping Windows Update Services...")
+                $services = @("wuauserv", "cryptSvc", "bits", "msiserver")
+                foreach ($svc in $services) {
+                    $Hash.LogQueue.Enqueue("Stopping $svc...")
+                    Stop-Service -Name $svc -Force -ErrorAction SilentlyContinue
+                }
+                
+                $Hash.LogQueue.Enqueue(">>> Renaming SoftwareDistribution and catroot2 folders...")
+                Rename-Item -Path "$env:windir\SoftwareDistribution" -NewName "SoftwareDistribution.old" -ErrorAction SilentlyContinue
+                Rename-Item -Path "$env:windir\System32\catroot2" -NewName "catroot2.old" -ErrorAction SilentlyContinue
+                
+                $Hash.LogQueue.Enqueue(">>> Restarting Windows Update Services...")
+                foreach ($svc in $services) {
+                    $Hash.LogQueue.Enqueue("Starting $svc...")
+                    Start-Service -Name $svc -ErrorAction SilentlyContinue
+                }
+                $Hash.Result = "Success"
+            }
+            'UtilRestorePoint' {
+                $Hash.LogQueue.Enqueue(">>> Initializing System Restore Point creation...")
+                try {
+                    # Try to enable System Restore on the main OS drive just in case it is disabled
+                    Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
+                    
+                    Checkpoint-Computer -Description "Mini WingetUI Checkpoint" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                    
+                    $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.LogQueue.Enqueue("Error: $($_.Exception.Message)")
+                    $Hash.LogQueue.Enqueue("Note: Windows often restricts creating automatic restore points to once every 24 hours.")
+                    $Hash.Result = "Error"
+                }
+            }
+            'UtilResetNet' {
+                $Hash.LogQueue.Enqueue(">>> Releasing and Renewing IP...")
+                & ipconfig /release 2>&1 | Out-Null
+                & ipconfig /flushdns 2>&1 | ForEach-Object { if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) } }
+                & ipconfig /renew 2>&1 | Out-Null
+                
+                $Hash.LogQueue.Enqueue(">>> Resetting Winsock and IP Configuration...")
+                & netsh winsock reset 2>&1 | ForEach-Object { if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) } }
+                & netsh int ip reset 2>&1 | ForEach-Object { if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) } }
+                $Hash.Result = "Success"
+            }
+            'UtilSMB' {
+                $Hash.LogQueue.Enqueue(">>> Enabling SMBv1 Protocol...")
+                try {
+                    Enable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -All -NoRestart -ErrorAction Stop | Out-Null
+                    $Hash.LogQueue.Enqueue("Successfully enabled SMBv1. A system restart may be required.")
+                } catch {
+                    $Hash.LogQueue.Enqueue("Error enabling SMBv1: $($_.Exception.Message)")
+                }
+                $Hash.Result = "Success"
+            }
+            'UtilWingetRepair' {
+                $Hash.LogQueue.Enqueue(">>> Resetting Winget Sources...")
+                & winget source reset --force 2>&1 | ForEach-Object {
+                    if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) }
+                }
+                $Hash.Result = "Success"
+            }
+            'UtilStoreRepair' {
+                $Hash.LogQueue.Enqueue(">>> Running wsreset.exe to clear Microsoft Store cache...")
+                try {
+                    Start-Process wsreset.exe -Wait -WindowStyle Hidden
+                    $Hash.LogQueue.Enqueue("Microsoft Store cache cleared successfully.")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.Result = "Error: $($_.Exception.Message)"
+                }
+            }
+            'UtilDiskCleanup' {
+                $Hash.LogQueue.Enqueue(">>> Emptying Windows System Temp Folder...")
+                Remove-Item -Path "$env:windir\Temp\*" -Recurse -Force -ErrorAction SilentlyContinue
+                
+                $Hash.LogQueue.Enqueue(">>> Emptying User Local Temp Folder...")
+                Remove-Item -Path "$env:TEMP\*" -Recurse -Force -ErrorAction SilentlyContinue
+                
+                $Hash.LogQueue.Enqueue(">>> Emptying Recycle Bin...")
+                Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+                
+                $Hash.LogQueue.Enqueue("Disk cleanup completed.")
+                $Hash.Result = "Success"
+            }
+            'UtilIconCache' {
+                $Hash.LogQueue.Enqueue(">>> Stopping Explorer.exe...")
+                Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue
+                Start-Sleep -Seconds 1
+                
+                $Hash.LogQueue.Enqueue(">>> Deleting Icon and Thumbnail Caches...")
+                $cachePath = "$env:LOCALAPPDATA\Microsoft\Windows\Explorer"
+                Remove-Item -Path "$cachePath\iconcache*" -Force -ErrorAction SilentlyContinue
+                Remove-Item -Path "$cachePath\thumbcache*" -Force -ErrorAction SilentlyContinue
+                
+                $Hash.LogQueue.Enqueue(">>> Restarting Explorer.exe...")
+                Start-Process explorer.exe
+                
+                $Hash.Result = "Success"
+            }
+            'UtilClearLogs' {
+                $Hash.LogQueue.Enqueue(">>> Clearing all Event Viewer logs (this may take a minute)...")
+                try {
+                    $logs = wevtutil el
+                    $count = 0
+                    foreach ($log in $logs) {
+                        wevtutil cl "$log" 2>$null
+                        $count++
+                    }
+                    $Hash.LogQueue.Enqueue("Successfully cleared $count logs.")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.Result = "Error: $($_.Exception.Message)"
+                }
+            }
+            'UtilDriverUpdate' {
+                try {
+                    $Hash.LogQueue.Enqueue(">>> Connecting to Microsoft Update Catalog...")
+                    $UpdateSvc = New-Object -ComObject Microsoft.Update.ServiceManager
+                    $UpdateSvc.AddService2("7971f918-a847-4430-9279-4a52d1efe18d", 7, "") | Out-Null
+                    
+                    $Session = New-Object -ComObject Microsoft.Update.Session
+                    $Searcher = $Session.CreateUpdateSearcher()
+                    $Searcher.ServiceID = '7971f918-a847-4430-9279-4a52d1efe18d'
+                    $Searcher.SearchScope = 1
+                    $Searcher.ServerSelection = 3 
+                    
+                    $Hash.LogQueue.Enqueue(">>> Scanning hardware for missing or outdated drivers. This may take a few minutes...")
+                    $Criteria = "IsInstalled=0 and Type='Driver' and IsHidden=0"
+                    $SearchResult = $Searcher.Search($Criteria)
+                    $Updates = $SearchResult.Updates
+                    
+                    if ($Updates.Count -eq 0) {
+                        $Hash.LogQueue.Enqueue("[+] Your system is fully up to date! No missing drivers found.")
+                        $Hash.Result = "Success"
+                        return
+                    }
+                    
+                    $Hash.LogQueue.Enqueue("`r`nFound $($Updates.Count) driver update(s):")
+                    
+                    # Prepare to Download
+                    $UpdatesToDownload = New-Object -ComObject Microsoft.Update.UpdateColl
+                    for ($i = 0; $i -lt $Updates.Count; $i++) {
+                        $Update = $Updates.Item($i)
+                        $Hash.LogQueue.Enqueue("  -> $($Update.Title)")
+                        $UpdatesToDownload.Add($Update) | Out-Null
+                    }
+                    
+                    $Hash.LogQueue.Enqueue("`r`n>>> Downloading Drivers...")
+                    $Downloader = $Session.CreateUpdateDownloader()
+                    $Downloader.Updates = $UpdatesToDownload
+                    $Downloader.Download() | Out-Null
+                    $Hash.LogQueue.Enqueue("[+] Download Complete.")
+                    
+                    # Filter for successfully downloaded drivers to install
+                    $UpdatesToInstall = New-Object -ComObject Microsoft.Update.UpdateColl
+                    for ($i = 0; $i -lt $Updates.Count; $i++) {
+                        $Update = $Updates.Item($i)
+                        if ($Update.IsDownloaded) {
+                            $UpdatesToInstall.Add($Update) | Out-Null
+                        }
+                    }
+                    
+                    if ($UpdatesToInstall.Count -gt 0) {
+                        $Hash.LogQueue.Enqueue(">>> Installing Drivers...")
+                        $Installer = $Session.CreateUpdateInstaller()
+                        $Installer.Updates = $UpdatesToInstall
+                        
+                        $InstallationResult = $Installer.Install()
+                        
+                        $Hash.LogQueue.Enqueue("[+] Installation Process Finished.")
+                        
+                        if ($InstallationResult.RebootRequired) {
+                            $Hash.LogQueue.Enqueue("===================================================")
+                            $Hash.LogQueue.Enqueue("[!] REBOOT REQUIRED: Please restart your computer to apply the new drivers.")
+                            $Hash.LogQueue.Enqueue("===================================================")
+                            $Hash.Result = "Success (Reboot Required)"
+                        } else {
+                            $Hash.LogQueue.Enqueue("[+] All drivers installed successfully. No reboot required.")
+                            $Hash.Result = "Success"
+                        }
+                    } else {
+                        $Hash.LogQueue.Enqueue("[-] Could not verify downloaded drivers. Installation aborted.")
+                        $Hash.Result = "Success"
+                    }
+                } catch {
+                    $Hash.LogQueue.Enqueue("[-] Driver update failed: $($_.Exception.Message)")
+                    $Hash.Result = "Error: $($_.Exception.Message)"
+                }
+            }
         }
     } catch {
         $Hash.Result = "Error: $($_.Exception.Message)"
@@ -609,10 +1026,10 @@ $bgJobBlock = {
 }
 
 # 5. Helper Function to safely dispatch jobs to the Runspace
-function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false) {
+function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $CreateRestore = $false) {
     # Check if a job is already running and warn the user
     if ($script:IsJobRunning) {
-        [System.Windows.MessageBox]::Show("A Winget task is currently running in the background.`n`nPlease wait for it to finish or click 'Stop' before starting a new action.", "Task in Progress", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+        [System.Windows.MessageBox]::Show("A task is currently running in the background.`n`nPlease wait for it to finish or click 'Stop' before starting a new action.", "Task in Progress", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
         return
     }
     
@@ -624,7 +1041,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false) {
     while ($syncHash.LogQueue.TryDequeue([ref]$dummy)) {}
 
     # Auto-expand the log panel if we are making system changes
-    if ($Action -in @('Install', 'Uninstall', 'Update')) {
+    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilResetNet', 'UtilSMB', 'UtilDriverUpdate', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs')) {
         $LogExpander.IsExpanded = $true
     }
     
@@ -641,7 +1058,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false) {
     $syncHash.Progress = $null
     $syncHash.StatusMsg = $StatusMsg # Store the base message so we can append % to it later
 
-    $script:psInstance = [PowerShell]::Create().AddScript($bgJobBlock).AddArgument($Action).AddArgument($Query).AddArgument($Id).AddArgument($syncHash).AddArgument($IsAdmin)
+    $script:psInstance = [PowerShell]::Create().AddScript($bgJobBlock).AddArgument($Action).AddArgument($Query).AddArgument($Id).AddArgument($syncHash).AddArgument($IsAdmin).AddArgument($CreateRestore)
     $script:psInstance.Runspace = $runspace
     $script:asyncResult = $script:psInstance.BeginInvoke()
     $timer.Start()
@@ -875,6 +1292,19 @@ $timer.Add_Tick({
                     $detailWindow.DataContext = $res
                     $detailWindow.ShowDialog() | Out-Null
                 }
+                'UtilSystemScan' { $StatusText.Text = "System scan and repair completed." }
+                'UtilResetWU'    { $StatusText.Text = "Windows Update services reset completed." }
+                'UtilRestorePoint' { $StatusText.Text = "System restore point created successfully." }
+                'UtilResetNet'   { $StatusText.Text = "Network adapters reset successfully." }
+                'UtilSMB'        { $StatusText.Text = "SMBv1 protocol has been enabled." }
+                'UtilWingetRepair' { $StatusText.Text = "Winget repositories have been reset." }
+                'UtilStoreRepair'  { $StatusText.Text = "Microsoft Store cache cleared." }
+                'UtilDiskCleanup'  { $StatusText.Text = "Deep disk cleanup completed." }
+                'UtilIconCache'    { $StatusText.Text = "Icon and thumbnail cache rebuilt." }
+                'UtilClearLogs'    { $StatusText.Text = "Event Viewer logs successfully cleared." }
+                'UtilDriverUpdate' { 
+                    $StatusText.Text = if ($res -match "Reboot") { "Drivers installed! System reboot required." } else { "Driver scan and update process completed." } 
+                }
             }
         }
     }
@@ -883,7 +1313,7 @@ $timer.Add_Tick({
 # 7. Map Button Clicks
 $StopJobBtn.Add_Click({
     if ($script:psInstance -ne $null -and $script:asyncResult.IsCompleted -eq $false) {
-        $StatusText.Text = "Stopping operation... (Killing Winget)"
+        $StatusText.Text = "Stopping operation..."
         $StopJobBtn.IsEnabled = $false
         
         # 1. Stop the PowerShell runspace pipeline immediately
@@ -994,14 +1424,22 @@ $InstallBtn.Add_Click({
     if ($script:InstallQueue.Count -gt 0) {
         [string[]]$ids = @($script:InstallQueue | ForEach-Object { $_.Id })
         $msg = ""
+        $promptMsg = ""
         if ($ids.Count -eq 1) { 
             $msg = "Installing $($script:InstallQueue[0].Name)..." 
+            $promptMsg = "Are you sure you want to install $($script:InstallQueue[0].Name)?"
         } else { 
             $msg = "Installing $($ids.Count) packages... Please wait." 
+            $promptMsg = "Are you sure you want to install $($ids.Count) packages?"
         }
         
-        $isAdmin = $AdminInstallCheck.IsChecked -eq $true
-        Start-WingetJob -Action "Install" -Query "" -Id $ids -StatusMsg $msg -IsAdmin $isAdmin
+        $msgResult = [System.Windows.MessageBox]::Show($promptMsg, "Confirm Install", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+        
+        if ($msgResult -eq 'Yes') {
+            $isAdmin = $AdminInstallCheck.IsChecked -eq $true
+            $createRestore = $CreateRestorePointInstallCheck.IsChecked -eq $true
+            Start-WingetJob -Action "Install" -Query "" -Id $ids -StatusMsg $msg -IsAdmin $isAdmin -CreateRestore $createRestore
+        }
     } else { 
         [System.Windows.MessageBox]::Show("Please add packages to the install queue before clicking Install.") 
     }
@@ -1019,16 +1457,24 @@ $UninstallBtn.Add_Click({
     if ($selected.Count -gt 0) { 
         [string[]]$ids = @($selected | ForEach-Object { $_.Id })
         
-        # Save the selected app objects to the background syncHash so the scanner knows what to look for
-        $syncHash.TargetApps = $selected
-        
         $msg = ""
+        $promptMsg = ""
         if ($ids.Count -eq 1) { 
             $msg = "Uninstalling $($selected[0].Name)..." 
+            $promptMsg = "Are you sure you want to uninstall $($selected[0].Name)?"
         } else { 
             $msg = "Uninstalling $($ids.Count) packages... Please wait." 
+            $promptMsg = "Are you sure you want to uninstall $($ids.Count) packages?"
         }
-        Start-WingetJob -Action "Uninstall" -Query "" -Id $ids -StatusMsg $msg
+
+        $msgResult = [System.Windows.MessageBox]::Show($promptMsg, "Confirm Uninstall", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+        
+        if ($msgResult -eq 'Yes') {
+            # Save the selected app objects to the background syncHash so the scanner knows what to look for
+            $syncHash.TargetApps = $selected
+            $createRestore = $CreateRestorePointUpdateCheck.IsChecked -eq $true
+            Start-WingetJob -Action "Uninstall" -Query "" -Id $ids -StatusMsg $msg -CreateRestore $createRestore
+        }
     } else { 
         [System.Windows.MessageBox]::Show("Please select at least one installed package to uninstall.") 
     }
@@ -1039,12 +1485,21 @@ $UpdateBtn.Add_Click({
     if ($selected.Count -gt 0) { 
         [string[]]$ids = @($selected | ForEach-Object { $_.Id })
         $msg = ""
+        $promptMsg = ""
         if ($ids.Count -eq 1) { 
             $msg = "Updating $($selected[0].Name)..." 
+            $promptMsg = "Are you sure you want to update $($selected[0].Name)?"
         } else { 
             $msg = "Updating $($ids.Count) packages... Please wait." 
+            $promptMsg = "Are you sure you want to update $($ids.Count) packages?"
         }
-        Start-WingetJob -Action "Update" -Query "" -Id $ids -StatusMsg $msg
+        
+        $msgResult = [System.Windows.MessageBox]::Show($promptMsg, "Confirm Update", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+        
+        if ($msgResult -eq 'Yes') {
+            $createRestore = $CreateRestorePointUpdateCheck.IsChecked -eq $true
+            Start-WingetJob -Action "Update" -Query "" -Id $ids -StatusMsg $msg -CreateRestore $createRestore
+        }
     } else { 
         [System.Windows.MessageBox]::Show("Please select at least one package to update.") 
     }
@@ -1060,7 +1515,14 @@ $UpdateAllBtn.Add_Click({
     
     if ($ids.Count -gt 0) {
         $msg = if ($ids.Count -eq 1) { "Updating 1 package..." } else { "Updating all $($ids.Count) available updates... Please wait." }
-        Start-WingetJob -Action "Update" -Query "" -Id $ids -StatusMsg $msg
+        $promptMsg = if ($ids.Count -eq 1) { "Are you sure you want to update 1 package?" } else { "Are you sure you want to update all $($ids.Count) available packages?" }
+        
+        $msgResult = [System.Windows.MessageBox]::Show($promptMsg, "Confirm Update All", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+        
+        if ($msgResult -eq 'Yes') {
+            $createRestore = $CreateRestorePointUpdateCheck.IsChecked -eq $true
+            Start-WingetJob -Action "Update" -Query "" -Id $ids -StatusMsg $msg -CreateRestore $createRestore
+        }
     } else {
         [System.Windows.MessageBox]::Show("No available updates found.")
     }
@@ -1078,6 +1540,70 @@ $DiscoverMenuDetails.Add_Click({ &$showDetailsAction $DiscoverGrid })
 $QueueMenuDetails.Add_Click({ &$showDetailsAction $QueueGrid })
 $InstalledMenuDetails.Add_Click({ &$showDetailsAction $InstalledGrid })
 $WindowsAppsMenuDetails.Add_Click({ &$showDetailsAction $WindowsAppsGrid })
+
+# --- Utility Button Event Handlers ---
+$UtilSysScanBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will run DISM /RestoreHealth and SFC /scannow.`nThis process checks for system corruption and repairs missing Windows components.`n`nThis process can take up to 20 minutes and might cause high CPU usage. Continue?", "System Scan", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilSystemScan" -Query "" -Id "" -StatusMsg "Running System Scan (DISM & SFC)... Please wait." }
+})
+
+$UtilResetWUBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will stop all Windows Update services, clear the software distribution cache, and restart the services.`n`nUse this if updates are failing to download or install. Continue?", "Reset Windows Update", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilResetWU" -Query "" -Id "" -StatusMsg "Resetting Windows Update components..." }
+})
+
+$UtilRestorePointBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will create a new Windows System Restore Point.`n`nContinue?", "Create Restore Point", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilRestorePoint" -Query "" -Id "" -StatusMsg "Creating System Restore Point... Please wait." }
+})
+
+$UtilOpenRestoreBtn.Add_Click({
+    try {
+        Start-Process "$env:windir\System32\rstrui.exe"
+    } catch {
+        [System.Windows.MessageBox]::Show("Failed to open System Restore. It may be disabled on this system.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+    }
+})
+
+$UtilResetNetBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will flush DNS, release/renew your IP, and completely reset Winsock and TCP/IP configurations.`n`nYou may briefly lose internet connection. Continue?", "Reset Network", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilResetNet" -Query "" -Id "" -StatusMsg "Resetting Network Adapters and configurations..." }
+})
+
+$UtilSMBBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("Are you sure you want to enable the legacy SMBv1 protocol?`n`nNote: SMBv1 is considered insecure and should only be enabled if required for connecting to legacy NAS drives or older network printers.", "Enable SMBv1", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilSMB" -Query "" -Id "" -StatusMsg "Enabling SMBv1 Protocol..." }
+})
+
+$UtilWingetRepairBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will force-reset the Winget package repositories.`n`nUse this if searches are failing or apps refuse to download. Continue?", "Repair Winget Sources", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilWingetRepair" -Query "" -Id "" -StatusMsg "Resetting Winget Sources..." }
+})
+
+$UtilStoreRepairBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will run wsreset.exe to clear the Microsoft Store cache.`n`nUse this if Store Apps are stuck on 'Pending' or fail to update. Continue?", "Repair Microsoft Store", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilStoreRepair" -Query "" -Id "" -StatusMsg "Clearing Microsoft Store Cache..." }
+})
+
+$UtilDiskCleanupBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will permanently empty the Recycle Bin and delete temporary files in both your User Temp and Windows Temp folders.`n`nContinue?", "Deep Disk Cleanup", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilDiskCleanup" -Query "" -Id "" -StatusMsg "Cleaning up disk space..." }
+})
+
+$UtilClearLogsBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will clear all background Windows Event Viewer logs.`n`nThis is useful for freeing up space or starting with a clean slate for troubleshooting. Continue?", "Clear Event Logs", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilClearLogs" -Query "" -Id "" -StatusMsg "Clearing Event Viewer Logs... This may take a moment." }
+})
+
+$UtilIconCacheBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will restart the Windows taskbar (explorer.exe) and delete the hidden icon/thumbnail databases to force Windows to rebuild them.`n`nYour screen will blink during this process. Continue?", "Rebuild Icon Cache", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilIconCache" -Query "" -Id "" -StatusMsg "Rebuilding Icon and Thumbnail caches..." }
+})
+
+$UtilDriverBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will scan Microsoft Update for missing or outdated hardware drivers, download them, and automatically install them.`n`nThe scan process can take several minutes. Continue?", "Update Hardware Drivers", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilDriverUpdate" -Query "" -Id "" -StatusMsg "Scanning for missing drivers... Please wait." }
+})
 
 # --- Auto-Load Installed Apps on Startup ---
 $Window.Add_Loaded({
