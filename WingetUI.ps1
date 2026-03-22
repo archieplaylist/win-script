@@ -1,4 +1,31 @@
 # Requires -Version 5.1
+param(
+    [switch]$RunHidden
+)
+
+$isActualAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
+
+# --- Auto-Elevate and Self-Relaunch to Hide Console ---
+if (-not $RunHidden) {
+    $psArgs = @("-ExecutionPolicy", "Bypass", "-File", $PSCommandPath, "-RunHidden")
+    if (-not $isActualAdmin) {
+        try {
+            # Ask for Admin permission
+            Start-Process powershell.exe -Verb RunAs -WindowStyle Hidden -ArgumentList $psArgs
+            exit
+        } catch {
+            # User clicked 'No' on the UAC prompt. Fall back to standard user mode.
+            Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $psArgs
+            exit
+        }
+    } else {
+        # Already Admin, just hide the console window
+        Start-Process powershell.exe -WindowStyle Hidden -ArgumentList $psArgs
+        exit
+    }
+}
+# ------------------------------------------
+
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Drawing
 
@@ -29,13 +56,31 @@ Add-Type -AssemblyName System.Drawing
             <Setter Property="Background" Value="{StaticResource ControlBackground}"/>
             <Setter Property="Foreground" Value="{StaticResource TextForeground}"/>
             <Setter Property="BorderBrush" Value="{StaticResource ControlBorder}"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Style.Triggers>
-                <Trigger Property="IsSelected" Value="True">
-                    <Setter Property="Background" Value="{StaticResource WindowBackground}"/>
-                    <Setter Property="BorderThickness" Value="1,1,1,0"/>
-                </Trigger>
-            </Style.Triggers>
+            <Setter Property="Padding" Value="15,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border Name="TabBorder" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="1,1,1,0" Margin="0,0,2,0">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource WindowBackground}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                                <Setter Property="FontWeight" Value="SemiBold"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsSelected" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource ControlBorder}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
 
         <Style TargetType="Button">
@@ -162,7 +207,7 @@ Add-Type -AssemblyName System.Drawing
                     
                     <!-- Row 2: Queue Controls -->
                     <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,10,0,10" HorizontalAlignment="Right">
-                        <Button Name="AddToQueueBtn" Content="Add Selected to Install Queue ↓" Padding="8" Width="250" FontWeight="Bold"/>
+                        <Button Name="AddToQueueBtn" Content="Add Selected to Install Queue &#x2193;" Padding="8" Width="250" FontWeight="Bold"/>
                     </StackPanel>
                     
                     <!-- Row 3: Queue Grid -->
@@ -201,29 +246,60 @@ Add-Type -AssemblyName System.Drawing
                     <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
                         <Button Name="RefreshInstalledBtn" Content="Load Installed &amp; Check Updates" Padding="5" Width="220" Margin="0,0,10,0"/>
                     </StackPanel>
-                    <DataGrid Name="InstalledGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended">
-                        <DataGrid.RowStyle>
-                            <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding HasUpdate}" Value="True">
-                                        <Setter Property="Background" Value="#2A4032"/>
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </DataGrid.RowStyle>
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*"/>
-                            <DataGridTextColumn Header="Current Version" Binding="{Binding Version}" Width="*"/>
-                            <DataGridTextColumn Header="Available Update" Binding="{Binding Extra}" Width="*"/>
-                            <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*"/>
-                        </DataGrid.Columns>
-                        <DataGrid.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Name="InstalledMenuDetails" Header="Show App Details..." />
-                            </ContextMenu>
-                        </DataGrid.ContextMenu>
-                    </DataGrid>
+                    
+                    <TabControl Name="InstalledTabs" Grid.Row="1" Margin="0,5,0,0">
+                        <TabItem Header="Desktop / External Apps">
+                            <DataGrid Name="InstalledGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended" BorderThickness="0">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasUpdate}" Value="True">
+                                                <Setter Property="Background" Value="#2A4032"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*"/>
+                                    <DataGridTextColumn Header="Current Version" Binding="{Binding Version}" Width="*"/>
+                                    <DataGridTextColumn Header="Available Update" Binding="{Binding Extra}" Width="*"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*"/>
+                                </DataGrid.Columns>
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Name="InstalledMenuDetails" Header="Show App Details..." />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                            </DataGrid>
+                        </TabItem>
+                        <TabItem Header="Windows / Store Apps">
+                            <DataGrid Name="WindowsAppsGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended" BorderThickness="0">
+                                <DataGrid.RowStyle>
+                                    <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding HasUpdate}" Value="True">
+                                                <Setter Property="Background" Value="#2A4032"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </DataGrid.RowStyle>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*"/>
+                                    <DataGridTextColumn Header="Current Version" Binding="{Binding Version}" Width="*"/>
+                                    <DataGridTextColumn Header="Available Update" Binding="{Binding Extra}" Width="*"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*"/>
+                                </DataGrid.Columns>
+                                <DataGrid.ContextMenu>
+                                    <ContextMenu>
+                                        <MenuItem Name="WindowsAppsMenuDetails" Header="Show App Details..." />
+                                    </ContextMenu>
+                                </DataGrid.ContextMenu>
+                            </DataGrid>
+                        </TabItem>
+                    </TabControl>
+
                     <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,10,0,0" HorizontalAlignment="Right">
                         <Button Name="UninstallBtn" Content="Uninstall Selected" Padding="8" Width="140" Foreground="#FF6B6B" FontWeight="Bold" Margin="0,0,10,0"/>
                         <Button Name="UpdateBtn" Content="Update Selected" Padding="8" Width="140" Foreground="#6BA4FF" FontWeight="Bold" Margin="0,0,10,0"/>
@@ -272,12 +348,29 @@ $ExportQueueBtn = $Window.FindName("ExportQueueBtn")
 $AdminInstallCheck = $Window.FindName("AdminInstallCheck")
 $InstallBtn = $Window.FindName("InstallBtn")
 
+# --- Apply Admin Status to UI ---
+if ($isActualAdmin) {
+    $Window.Title = "Mini WingetUI (Administrator)"
+    $AdminInstallCheck.IsChecked = $true
+    $AdminInstallCheck.IsEnabled = $true
+} else {
+    $Window.Title = "Mini WingetUI (Standard User)"
+    $AdminInstallCheck.IsChecked = $false
+    $AdminInstallCheck.IsEnabled = $false
+    $AdminInstallCheck.Content = "Install for Current User (No Admin)"
+    $AdminInstallCheck.ToolTip = "You declined the Administrator prompt. Installations are limited to the current user."
+    $AdminInstallCheck.Foreground = "#888888"
+}
+
 $RefreshInstalledBtn = $Window.FindName("RefreshInstalledBtn")
 $UninstallBtn = $Window.FindName("UninstallBtn")
 $UpdateBtn = $Window.FindName("UpdateBtn")
 $UpdateAllBtn = $Window.FindName("UpdateAllBtn")
 $InstalledGrid = $Window.FindName("InstalledGrid")
 $InstalledMenuDetails = $Window.FindName("InstalledMenuDetails")
+
+$WindowsAppsGrid = $Window.FindName("WindowsAppsGrid")
+$WindowsAppsMenuDetails = $Window.FindName("WindowsAppsMenuDetails")
 
 $LogExpander = $Window.FindName("LogExpander")
 $LogTextBox = $Window.FindName("LogTextBox")
@@ -301,6 +394,7 @@ $runspace.SessionStateProxy.SetVariable("syncHash", $syncHash)
 $script:psInstance = $null
 $script:asyncResult = $null
 $script:IsJobRunning = $false
+$script:AllInstalledApps = $null
 
 # 4. Define the Universal Background Job
 $bgJobBlock = {
@@ -446,7 +540,19 @@ $bgJobBlock = {
                     if ($IsAdmin) { $wingetArgs += "--scope"; $wingetArgs += "machine" }
                     
                     & winget @wingetArgs 2>&1 | ForEach-Object {
-                        $Hash.LogQueue.Enqueue($_.ToString())
+                        $l = $_.ToString().Trim()
+                        # Ignore Winget's 1-character ASCII animation frames
+                        if ($l -in @('\', '|', '/', '-')) { return }
+                        
+                        # Intercept the Percentage for the UI Progress Bar
+                        if ($l -match '(?<pct>\d{1,3})\s*%') {
+                            $Hash.Progress = [int]$matches['pct']
+                            return # Hide this line from the text log to keep it clean
+                        }
+                        
+                        # Also filter block progress bars if they appear without percentages
+                        if ($l -match '█') { return }
+                        if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
                     }
                 }
                 $Hash.Result = "Success"
@@ -456,7 +562,14 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget uninstall $targetId")
                     $wingetArgs = @("uninstall", "--id", $targetId, "--exact", "--silent", "--disable-interactivity")
                     & winget @wingetArgs 2>&1 | ForEach-Object {
-                        $Hash.LogQueue.Enqueue($_.ToString())
+                        $l = $_.ToString().Trim()
+                        if ($l -in @('\', '|', '/', '-')) { return }
+                        if ($l -match '(?<pct>\d{1,3})\s*%') {
+                            $Hash.Progress = [int]$matches['pct']
+                            return
+                        }
+                        if ($l -match '█') { return }
+                        if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
                     }
                 }
                 $Hash.Result = "Success"
@@ -466,7 +579,14 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget upgrade $targetId")
                     $wingetArgs = @("upgrade", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
                     & winget @wingetArgs 2>&1 | ForEach-Object {
-                        $Hash.LogQueue.Enqueue($_.ToString())
+                        $l = $_.ToString().Trim()
+                        if ($l -in @('\', '|', '/', '-')) { return }
+                        if ($l -match '(?<pct>\d{1,3})\s*%') {
+                            $Hash.Progress = [int]$matches['pct']
+                            return
+                        }
+                        if ($l -match '█') { return }
+                        if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
                     }
                 }
                 $Hash.Result = "Success"
@@ -511,17 +631,70 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false) {
     # Activate Progress Bar and Stop Button
     $JobProgress.Visibility = 'Visible'
     $JobProgress.IsIndeterminate = $true
+    $JobProgress.Value = 0
     $StopJobBtn.Visibility = 'Visible'
     $StopJobBtn.IsEnabled = $true
     
     $StatusText.Text = $StatusMsg
     $syncHash.Action = $Action
     $syncHash.Result = $null
+    $syncHash.Progress = $null
+    $syncHash.StatusMsg = $StatusMsg # Store the base message so we can append % to it later
 
     $script:psInstance = [PowerShell]::Create().AddScript($bgJobBlock).AddArgument($Action).AddArgument($Query).AddArgument($Id).AddArgument($syncHash).AddArgument($IsAdmin)
     $script:psInstance.Runspace = $runspace
     $script:asyncResult = $script:psInstance.BeginInvoke()
     $timer.Start()
+}
+
+# --- Heuristic Leftover Scanner Function ---
+function Get-SafeLeftoverPaths {
+    param($AppId, $AppName)
+    
+    $terms = @()
+    $parts = $AppId -split '\.'
+    
+    if ($parts.Count -ge 2) {
+        $terms += "$($parts[0])\$($parts[1])" # e.g. Mozilla\Firefox
+        $terms += $parts[1] # e.g. Firefox
+    } else {
+        $terms += $AppId
+    }
+    
+    # Extract the first distinct word of the App Name
+    $nameWord = ($AppName -split '\s+') | Where-Object { $_.Length -gt 3 } | Select-Object -First 1
+    if ($nameWord) { $terms += $nameWord }
+    
+    # CRITICAL: Strict blacklist to prevent deleting OS/Shared components
+    $unsafe = @('microsoft','windows','intel','amd','nvidia','system','software','common','program','google','apple','adobe','oracle','java','video','music','documents','desktop','downloads','users','admin','local','roaming','temp')
+    $validTerms = $terms | Where-Object { $_.Length -gt 3 -and $_.ToLower() -notin $unsafe } | Select-Object -Unique
+    
+    $leftovers = @()
+    $baseDirs = @($env:LOCALAPPDATA, $env:APPDATA, $env:ProgramData, $env:ProgramFiles, ${env:ProgramFiles(x86)})
+    $regBases = @("HKCU:\SOFTWARE", "HKLM:\SOFTWARE")
+    
+    foreach ($term in $validTerms) {
+        foreach ($dir in $baseDirs) {
+            $p = Join-Path $dir $term
+            if (Test-Path $p -ErrorAction SilentlyContinue) {
+                # Protect root directories from accidental matches
+                if ($p.Length -gt ($dir.Length + 2)) {
+                    $leftovers += [PSCustomObject]@{ Selected=$true; Type="Folder"; Path=$p }
+                }
+            }
+        }
+        foreach ($reg in $regBases) {
+            $p = Join-Path $reg $term
+            if (Test-Path $p -ErrorAction SilentlyContinue) {
+                # Protect base registry nodes
+                if ($p.Length -gt ($reg.Length + 2)) {
+                    $leftovers += [PSCustomObject]@{ Selected=$true; Type="Registry"; Path=$p }
+                }
+            }
+        }
+    }
+    # Deduplicate matches
+    return $leftovers | Group-Object Path | ForEach-Object { $_.Group[0] }
 }
 
 # 6. Setup the UI Timer to check job status
@@ -538,6 +711,16 @@ $timer.Add_Tick({
     if ($newLogs.Length -gt 0) {
         $LogTextBox.AppendText($newLogs.ToString())
         $LogTextBox.ScrollToEnd()
+    }
+    
+    # Check if a live percentage was reported back from Winget
+    if ($syncHash.Progress -ne $null) {
+        if ($JobProgress.IsIndeterminate) {
+            # Switch from spinning mode to solid fill mode
+            $JobProgress.IsIndeterminate = $false
+        }
+        $JobProgress.Value = $syncHash.Progress
+        $StatusText.Text = "$($syncHash.StatusMsg) - $($syncHash.Progress)%"
     }
 
     if ($script:asyncResult -ne $null -and $script:asyncResult.IsCompleted) {
@@ -574,19 +757,102 @@ $timer.Add_Tick({
                 }
                 'Installed' {
                     # Sort so packages with updates are on top, then sort alphabetically
-                    $sortedRes = @($res | Sort-Object -Property @{Expression="HasUpdate"; Descending=$true}, Name)
-                    $InstalledGrid.ItemsSource = $sortedRes
+                    $script:AllInstalledApps = @($res | Sort-Object -Property @{Expression="HasUpdate"; Descending=$true}, Name)
+                    
+                    # Split into two lists based on standard Windows Store / Appx / MSIX heuristics
+                    $desktopApps = @($script:AllInstalledApps | Where-Object { $_.Source -ne 'msstore' -and $_.Id -notmatch '_[a-zA-Z0-9]{13}$' -and $_.Id -notmatch '^MSIX\\' })
+                    $windowsApps = @($script:AllInstalledApps | Where-Object { $_.Source -eq 'msstore' -or $_.Id -match '_[a-zA-Z0-9]{13}$' -or $_.Id -match '^MSIX\\' })
+                    
+                    $InstalledGrid.ItemsSource = $desktopApps
+                    $WindowsAppsGrid.ItemsSource = $windowsApps
                     
                     # Count how many packages have updates
                     $updateCount = @($res | Where-Object { $_.HasUpdate -eq $true }).Count
-                    $StatusText.Text = "Loaded $($res.Count) installed packages. Found $updateCount available updates."
+                    $StatusText.Text = "Loaded $($desktopApps.Count) Desktop Apps and $($windowsApps.Count) Windows Apps. Found $updateCount available updates."
                 }
                 'Install' { 
                     $StatusText.Text = "Installation finished successfully." 
                     $script:InstallQueue.Clear() # Empty the queue when finished
                 }
                 'Uninstall' { 
-                    $StatusText.Text = "Uninstallation finished."
+                    $StatusText.Text = "Uninstallation finished. Scanning for leftovers..."
+                    
+                    # Run the Heuristic Leftover Scanner
+                    $allLeftovers = @()
+                    if ($syncHash.TargetApps) {
+                        foreach ($app in $syncHash.TargetApps) {
+                            $leftovers = Get-SafeLeftoverPaths -AppId $app.Id -AppName $app.Name
+                            $allLeftovers += $leftovers
+                        }
+                    }
+                    
+                    if ($allLeftovers.Count -gt 0) {
+                        # Display the Custom Cleanup UI
+                        $leftoverXaml = @"
+                        <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" Title="Cleanup Leftovers" Width="650" Height="400" Background="#1E1E1E" Foreground="#D4D4D4" WindowStartupLocation="CenterScreen">
+                            <Window.Resources>
+                                <Style TargetType="DataGridColumnHeader">
+                                    <Setter Property="Background" Value="#2D2D30"/>
+                                    <Setter Property="Foreground" Value="#D4D4D4"/>
+                                    <Setter Property="BorderBrush" Value="#3F3F46"/>
+                                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                                    <Setter Property="Padding" Value="5,8"/>
+                                    <Setter Property="FontWeight" Value="SemiBold"/>
+                                </Style>
+                            </Window.Resources>
+                            <Grid Margin="15">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                <TextBlock Text="The following leftover folders and registry keys were found. Select items to permanently remove:" FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                                <DataGrid Name="LeftoversGrid" Grid.Row="1" AutoGenerateColumns="False" CanUserAddRows="False" Background="#2D2D30" Foreground="#D4D4D4" BorderBrush="#3F3F46" HeadersVisibility="Column" RowBackground="#2D2D30" AlternatingRowBackground="#252526" GridLinesVisibility="Horizontal" HorizontalGridLinesBrush="#3F3F46">
+                                    <DataGrid.Columns>
+                                        <DataGridCheckBoxColumn Header="Remove" Binding="{Binding Selected, UpdateSourceTrigger=PropertyChanged}" Width="70">
+                                            <DataGridCheckBoxColumn.ElementStyle>
+                                                <Style TargetType="CheckBox"><Setter Property="HorizontalAlignment" Value="Center"/><Setter Property="VerticalAlignment" Value="Center"/></Style>
+                                            </DataGridCheckBoxColumn.ElementStyle>
+                                        </DataGridCheckBoxColumn>
+                                        <DataGridTextColumn Header="Type" Binding="{Binding Type}" IsReadOnly="True" Width="80"/>
+                                        <DataGridTextColumn Header="Path" Binding="{Binding Path}" IsReadOnly="True" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,15,0,0">
+                                    <Button Name="SkipBtn" Content="Skip" Width="80" Padding="8" Margin="0,0,10,0" Background="#3F3F46" Foreground="White" BorderThickness="0" Cursor="Hand"/>
+                                    <Button Name="DeleteBtn" Content="Delete Selected" Width="140" Padding="8" Background="#FF4444" Foreground="White" BorderThickness="0" FontWeight="Bold" Cursor="Hand"/>
+                                </StackPanel>
+                            </Grid>
+                        </Window>
+"@
+                        $lReader = (New-Object System.Xml.XmlNodeReader ([xml]$leftoverXaml))
+                        $lWindow = [Windows.Markup.XamlReader]::Load($lReader)
+                        
+                        $LeftoversGrid = $lWindow.FindName("LeftoversGrid")
+                        $SkipBtn = $lWindow.FindName("SkipBtn")
+                        $DeleteBtn = $lWindow.FindName("DeleteBtn")
+                        
+                        # Populate DataGrid
+                        $obsLeftovers = New-Object System.Collections.ObjectModel.ObservableCollection[object]
+                        foreach ($l in $allLeftovers) { $obsLeftovers.Add($l) }
+                        $LeftoversGrid.ItemsSource = $obsLeftovers
+                        
+                        $SkipBtn.Add_Click({ $lWindow.Close() })
+                        $DeleteBtn.Add_Click({
+                            foreach ($item in $obsLeftovers) {
+                                if ($item.Selected) {
+                                    try {
+                                        Remove-Item -Path $item.Path -Recurse -Force -ErrorAction SilentlyContinue
+                                    } catch { }
+                                }
+                            }
+                            $lWindow.Close()
+                        })
+                        
+                        $lWindow.ShowDialog() | Out-Null
+                    }
+                    
+                    $syncHash.TargetApps = $null
                     Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg "Refreshing installed packages..."
                     return # Skip re-enabling UI so the refresh can begin immediately
                 }
@@ -743,15 +1009,22 @@ $InstallBtn.Add_Click({
 
 $RefreshInstalledBtn.Add_Click({
     $InstalledGrid.ItemsSource = $null
+    $WindowsAppsGrid.ItemsSource = $null
+    $script:AllInstalledApps = $null
     Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg "Loading installed packages and checking for updates... This might take a moment."
 })
 
 $UninstallBtn.Add_Click({
-    if ($InstalledGrid.SelectedItems.Count -gt 0) { 
-        [string[]]$ids = @($InstalledGrid.SelectedItems | ForEach-Object { $_.Id })
+    $selected = @($InstalledGrid.SelectedItems) + @($WindowsAppsGrid.SelectedItems)
+    if ($selected.Count -gt 0) { 
+        [string[]]$ids = @($selected | ForEach-Object { $_.Id })
+        
+        # Save the selected app objects to the background syncHash so the scanner knows what to look for
+        $syncHash.TargetApps = $selected
+        
         $msg = ""
         if ($ids.Count -eq 1) { 
-            $msg = "Uninstalling $($InstalledGrid.SelectedItems[0].Name)..." 
+            $msg = "Uninstalling $($selected[0].Name)..." 
         } else { 
             $msg = "Uninstalling $($ids.Count) packages... Please wait." 
         }
@@ -762,11 +1035,12 @@ $UninstallBtn.Add_Click({
 })
 
 $UpdateBtn.Add_Click({
-    if ($InstalledGrid.SelectedItems.Count -gt 0) { 
-        [string[]]$ids = @($InstalledGrid.SelectedItems | ForEach-Object { $_.Id })
+    $selected = @($InstalledGrid.SelectedItems) + @($WindowsAppsGrid.SelectedItems)
+    if ($selected.Count -gt 0) { 
+        [string[]]$ids = @($selected | ForEach-Object { $_.Id })
         $msg = ""
         if ($ids.Count -eq 1) { 
-            $msg = "Updating $($InstalledGrid.SelectedItems[0].Name)..." 
+            $msg = "Updating $($selected[0].Name)..." 
         } else { 
             $msg = "Updating $($ids.Count) packages... Please wait." 
         }
@@ -777,12 +1051,12 @@ $UpdateBtn.Add_Click({
 })
 
 $UpdateAllBtn.Add_Click({
-    if ($InstalledGrid.ItemsSource -eq $null) {
+    if ($script:AllInstalledApps -eq $null) {
         [System.Windows.MessageBox]::Show("Please load the installed packages first.")
         return
     }
-    # Filter the items source for packages that have an available update
-    [string[]]$ids = @($InstalledGrid.ItemsSource | Where-Object { $_.HasUpdate -eq $true } | ForEach-Object { $_.Id })
+    # Filter the overall items source for packages that have an available update
+    [string[]]$ids = @($script:AllInstalledApps | Where-Object { $_.HasUpdate -eq $true } | ForEach-Object { $_.Id })
     
     if ($ids.Count -gt 0) {
         $msg = if ($ids.Count -eq 1) { "Updating 1 package..." } else { "Updating all $($ids.Count) available updates... Please wait." }
@@ -803,6 +1077,12 @@ $showDetailsAction = {
 $DiscoverMenuDetails.Add_Click({ &$showDetailsAction $DiscoverGrid })
 $QueueMenuDetails.Add_Click({ &$showDetailsAction $QueueGrid })
 $InstalledMenuDetails.Add_Click({ &$showDetailsAction $InstalledGrid })
+$WindowsAppsMenuDetails.Add_Click({ &$showDetailsAction $WindowsAppsGrid })
+
+# --- Auto-Load Installed Apps on Startup ---
+$Window.Add_Loaded({
+    Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg "Loading installed packages and checking for updates... This might take a moment."
+})
 
 # 6. Show the Window and clean up when closed
 $Window.ShowDialog() | Out-Null
