@@ -423,6 +423,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                     <WrapPanel>
                                         <Button Name="UtilResetNetBtn" Content="Reset Network Adapters" Padding="10,8" Margin="0,0,10,10"/>
                                         <Button Name="UtilSMBBtn" Content="Enable SMBv1 Protocol" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilFileSharingBtn" Content="Enable File &amp; Printer Sharing" Padding="10,8" Margin="0,0,10,10"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -493,6 +494,7 @@ $UtilRestorePointBtn = $Window.FindName("UtilRestorePointBtn")
 $UtilOpenRestoreBtn = $Window.FindName("UtilOpenRestoreBtn")
 $UtilResetNetBtn = $Window.FindName("UtilResetNetBtn")
 $UtilSMBBtn = $Window.FindName("UtilSMBBtn")
+$UtilFileSharingBtn = $Window.FindName("UtilFileSharingBtn")
 $UtilDriverBtn = $Window.FindName("UtilDriverBtn")
 $UtilWingetRepairBtn = $Window.FindName("UtilWingetRepairBtn")
 $UtilStoreRepairBtn = $Window.FindName("UtilStoreRepairBtn")
@@ -534,6 +536,7 @@ if ($isActualAdmin) {
     $UtilOpenRestoreBtn.IsEnabled = $false
     $UtilResetNetBtn.IsEnabled = $false
     $UtilSMBBtn.IsEnabled = $false
+    $UtilFileSharingBtn.IsEnabled = $false
     $UtilDriverBtn.IsEnabled = $false
     $UtilWingetRepairBtn.IsEnabled = $false
     $UtilStoreRepairBtn.IsEnabled = $false
@@ -884,6 +887,25 @@ $bgJobBlock = {
                 }
                 $Hash.Result = "Success"
             }
+            'UtilFileSharing' {
+                $Hash.LogQueue.Enqueue(">>> Enabling File and Printer Sharing rules...")
+                try {
+                    # Enable the display group (this handles both inbound and outbound rules in the group)
+                    Enable-NetFirewallRule -DisplayGroup "File and Printer Sharing" -ErrorAction Stop | Out-Null
+                    
+                    # Update scope to Any IP for all network profiles
+                    Set-NetFirewallRule -DisplayGroup "File and Printer Sharing" -Profile Any -LocalAddress Any -RemoteAddress Any -ErrorAction Stop | Out-Null
+                    
+                    $Hash.LogQueue.Enqueue("Successfully enabled 'File and Printer Sharing' for all profiles (Public, Private, Domain).")
+                    $Hash.LogQueue.Enqueue("Scope successfully expanded to Any IP Address (Inbound & Outbound).")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.LogQueue.Enqueue("PowerShell Cmdlet Error: $($_.Exception.Message)")
+                    $Hash.LogQueue.Enqueue("Attempting fallback using netsh...")
+                    & netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=Yes
+                    $Hash.Result = "Success (Fallback)"
+                }
+            }
             'UtilWingetRepair' {
                 $Hash.LogQueue.Enqueue(">>> Resetting Winget Sources...")
                 & winget source reset --force 2>&1 | ForEach-Object {
@@ -1041,7 +1063,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $C
     while ($syncHash.LogQueue.TryDequeue([ref]$dummy)) {}
 
     # Auto-expand the log panel if we are making system changes
-    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilResetNet', 'UtilSMB', 'UtilDriverUpdate', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs')) {
+    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilResetNet', 'UtilSMB', 'UtilFileSharing', 'UtilDriverUpdate', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs')) {
         $LogExpander.IsExpanded = $true
     }
     
@@ -1297,6 +1319,7 @@ $timer.Add_Tick({
                 'UtilRestorePoint' { $StatusText.Text = "System restore point created successfully." }
                 'UtilResetNet'   { $StatusText.Text = "Network adapters reset successfully." }
                 'UtilSMB'        { $StatusText.Text = "SMBv1 protocol has been enabled." }
+                'UtilFileSharing'{ $StatusText.Text = "File and Printer Sharing enabled globally." }
                 'UtilWingetRepair' { $StatusText.Text = "Winget repositories have been reset." }
                 'UtilStoreRepair'  { $StatusText.Text = "Microsoft Store cache cleared." }
                 'UtilDiskCleanup'  { $StatusText.Text = "Deep disk cleanup completed." }
@@ -1573,6 +1596,11 @@ $UtilResetNetBtn.Add_Click({
 $UtilSMBBtn.Add_Click({
     $msgResult = [System.Windows.MessageBox]::Show("Are you sure you want to enable the legacy SMBv1 protocol?`n`nNote: SMBv1 is considered insecure and should only be enabled if required for connecting to legacy NAS drives or older network printers.", "Enable SMBv1", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilSMB" -Query "" -Id "" -StatusMsg "Enabling SMBv1 Protocol..." }
+})
+
+$UtilFileSharingBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will enable the 'File and Printer Sharing' firewall rules for all network profiles (Public, Private, Domain) and allow inbound/outbound traffic from ANY IP address.`n`nWarning: Expanding this scope on Public networks can be a security risk. Continue?", "Enable File & Printer Sharing", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilFileSharing" -Query "" -Id "" -StatusMsg "Enabling File and Printer Sharing..." }
 })
 
 $UtilWingetRepairBtn.Add_Click({
