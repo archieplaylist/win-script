@@ -358,6 +358,81 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                 </Grid>
             </TabItem>
             
+            <!-- NEW: Privacy & Ads Tab -->
+            <TabItem Header="Privacy &amp; Ads">
+                <Grid Margin="10">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    
+                    <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="0">
+                        <StackPanel Margin="5,10,5,15">
+                            <TextBlock Text="Privacy &amp; Ad Blocker" FontWeight="Bold" FontSize="18" Foreground="{StaticResource AccentColor}" Margin="0,0,0,5"/>
+                            <TextBlock Text="Toggle the switches below to disable telemetry tracking and system-wide advertisements." Foreground="#AAAAAA" Margin="0,0,0,10"/>
+                            <TextBlock Name="PrivacyAdminWarning" Text="Administrator privileges are required to apply system-level privacy settings." Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                            
+                            <!-- Telemetry Box -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Telemetry &amp; Data Collection" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <CheckBox Name="ChkTelemetry" Content="Disable Diagnostic Data &amp; Telemetry (DiagTrack)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkActivity" Content="Disable Activity History &amp; Timeline Tracking" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkTailoredExp" Content="Disable Tailored Experiences (Diagnostic data-based ads)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkWER" Content="Disable Windows Error Reporting (Prevent crash dump uploads)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkFeedback" Content="Disable Feedback Prompts (Stop Microsoft surveys)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Ads Box -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="System Annoyances &amp; Ads" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <CheckBox Name="ChkBingSearch" Content="Disable Bing Web Search in Start Menu" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkStartAds" Content="Disable Start Menu Suggestions (Promoted apps)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkLockScreenAds" Content="Disable Lock Screen Tips &amp; Fun Facts (Spotlight ads)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkExplorerAds" Content="Disable File Explorer Notifications (OneDrive/Office 365 banners)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkWelcomeExp" Content="Disable Windows Welcome Experience (Post-update nagging)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkAdId" Content="Disable Advertising ID (Targeted app ads)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- AI & Features Box -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Windows Features &amp; AI" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <CheckBox Name="ChkCopilot" Content="Disable Windows Copilot &amp; AI Features" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <CheckBox Name="ChkWidgets" Content="Disable Taskbar Widgets / News &amp; Interests" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Bloatware Box -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Automatic Installations" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <CheckBox Name="ChkConsumer" Content="Disable Windows Consumer Features (Prevents Candy Crush/TikTok auto-installs)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                </StackPanel>
+                            </Border>
+                            
+                            <!-- Network Box -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                <StackPanel>
+                                    <TextBlock Text="Network Privacy" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <CheckBox Name="ChkWifiSense" Content="Disable Wi-Fi Sense (Stops background open-network connections)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                    
+                    <!-- Action Buttons -->
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                        <CheckBox Name="CreateRestorePointPrivacyCheck" Content="Create Restore Point" IsChecked="True" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{StaticResource TextForeground}"/>
+                        <Button Name="RefreshPrivacyBtn" Content="Refresh Status" Padding="15,8" Margin="0,0,10,0"/>
+                        <Button Name="ApplyPrivacyBtn" Content="Apply Privacy Settings" Padding="15,8" Width="200" FontWeight="Bold" Foreground="#FF6B6B"/>
+                    </StackPanel>
+                </Grid>
+            </TabItem>
+
             <!-- NEW: Utilities Tab -->
             <TabItem Header="Utilities">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -506,6 +581,27 @@ $UtilDiskCleanupBtn = $Window.FindName("UtilDiskCleanupBtn")
 $UtilClearLogsBtn = $Window.FindName("UtilClearLogsBtn")
 $UtilIconCacheBtn = $Window.FindName("UtilIconCacheBtn")
 
+# Privacy UI Map
+$PrivacyAdminWarning = $Window.FindName("PrivacyAdminWarning")
+$ChkTelemetry = $Window.FindName("ChkTelemetry")
+$ChkActivity = $Window.FindName("ChkActivity")
+$ChkTailoredExp = $Window.FindName("ChkTailoredExp")
+$ChkWER = $Window.FindName("ChkWER")
+$ChkFeedback = $Window.FindName("ChkFeedback")
+$ChkBingSearch = $Window.FindName("ChkBingSearch")
+$ChkStartAds = $Window.FindName("ChkStartAds")
+$ChkLockScreenAds = $Window.FindName("ChkLockScreenAds")
+$ChkExplorerAds = $Window.FindName("ChkExplorerAds")
+$ChkWelcomeExp = $Window.FindName("ChkWelcomeExp")
+$ChkAdId = $Window.FindName("ChkAdId")
+$ChkCopilot = $Window.FindName("ChkCopilot")
+$ChkWidgets = $Window.FindName("ChkWidgets")
+$ChkConsumer = $Window.FindName("ChkConsumer")
+$ChkWifiSense = $Window.FindName("ChkWifiSense")
+$RefreshPrivacyBtn = $Window.FindName("RefreshPrivacyBtn")
+$ApplyPrivacyBtn = $Window.FindName("ApplyPrivacyBtn")
+$CreateRestorePointPrivacyCheck = $Window.FindName("CreateRestorePointPrivacyCheck")
+
 $CreateRestorePointUpdateCheck = $Window.FindName("CreateRestorePointUpdateCheck")
 
 # --- Apply Admin Status to UI ---
@@ -516,6 +612,7 @@ if ($isActualAdmin) {
     
     $CreateRestorePointInstallCheck.IsEnabled = $true
     $CreateRestorePointUpdateCheck.IsEnabled = $true
+    $CreateRestorePointPrivacyCheck.IsEnabled = $true
 } else {
     $Window.Title = "WinToolsUI (Standard User)"
     $AdminInstallCheck.IsChecked = $false
@@ -531,6 +628,10 @@ if ($isActualAdmin) {
     $CreateRestorePointUpdateCheck.IsEnabled = $false
     $CreateRestorePointUpdateCheck.ToolTip = "Administrator privileges are required to create Restore Points."
     $CreateRestorePointUpdateCheck.Foreground = "#888888"
+    
+    $CreateRestorePointPrivacyCheck.IsEnabled = $false
+    $CreateRestorePointPrivacyCheck.ToolTip = "Administrator privileges are required to create Restore Points."
+    $CreateRestorePointPrivacyCheck.Foreground = "#888888"
     
     # Disable Utilities if not admin
     $UtilAdminWarning.Visibility = 'Visible'
@@ -549,6 +650,10 @@ if ($isActualAdmin) {
     $UtilDiskCleanupBtn.IsEnabled = $false
     $UtilClearLogsBtn.IsEnabled = $false
     $UtilIconCacheBtn.IsEnabled = $false
+    
+    # Disable Privacy if not admin
+    $PrivacyAdminWarning.Visibility = 'Visible'
+    $ApplyPrivacyBtn.IsEnabled = $false
 }
 
 $RefreshInstalledBtn = $Window.FindName("RefreshInstalledBtn")
@@ -1116,6 +1221,154 @@ $bgJobBlock = {
                     $Hash.Result = "Error: SDIO executable missing."
                 }
             }
+            'ApplyPrivacy' {
+                if ($CreateRestore) {
+                    $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before applying privacy settings...")
+                    try {
+                        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
+                        Checkpoint-Computer -Description "WinToolsUI Privacy Settings" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                        $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
+                    } catch {
+                        $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
+                    }
+                }
+                
+                # Helper function for setting registry keys deeply
+                function Set-PrivacyRegKey($Path, $Name, $Value, $Type = "DWord") {
+                    if (-not (Test-Path $Path)) { New-Item -Path $Path -Force -ErrorAction SilentlyContinue | Out-Null }
+                    Set-ItemProperty -Path $Path -Name $Name -Value $Value -Type $Type -ErrorAction SilentlyContinue
+                }
+
+                $cfg = $Query # Query holds our hashtable of checkbox states
+                $Hash.LogQueue.Enqueue(">>> Applying Privacy and Ad-blocking settings...")
+                
+                # 1. Telemetry
+                if ($cfg.Telemetry) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Windows Telemetry (DiagTrack)")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 0
+                    Set-PrivacyRegKey "HKLM:\SYSTEM\CurrentControlSet\Services\DiagTrack" "Start" 4
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 3
+                    Set-PrivacyRegKey "HKLM:\SYSTEM\CurrentControlSet\Services\DiagTrack" "Start" 2
+                }
+
+                # 2. Activity History
+                if ($cfg.Activity) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Activity History")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" "EnableActivityFeed" 0
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" "PublishUserActivities" 0
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" "EnableActivityFeed" 1
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" "PublishUserActivities" 1
+                }
+
+                # 3. Tailored Experiences
+                if ($cfg.TailoredExp) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Tailored Experiences")
+                    Set-PrivacyRegKey "HKCU:\Software\Policies\Microsoft\Windows\CloudContent" "DisableTailoredExperiencesWithDiagnosticData" 1
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Policies\Microsoft\Windows\CloudContent" "DisableTailoredExperiencesWithDiagnosticData" 0
+                }
+
+                # 4. Start Menu Ads
+                if ($cfg.StartAds) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Start Menu Suggested Apps")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-338388Enabled" 0
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-338388Enabled" 1
+                }
+
+                # 5. Lock Screen Ads
+                if ($cfg.LockScreenAds) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Lock Screen Tips")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-338387Enabled" 0
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-338387Enabled" 1
+                }
+
+                # 6. File Explorer Ads
+                if ($cfg.ExplorerAds) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling File Explorer Notifications")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowSyncProviderNotifications" 0
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowSyncProviderNotifications" 1
+                }
+
+                # 7. Welcome Experience
+                if ($cfg.WelcomeExp) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Windows Welcome Experience")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-310093Enabled" 0
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-310093Enabled" 1
+                }
+
+                # 8. Advertising ID
+                if ($cfg.AdId) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Advertising ID")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" "Enabled" 0
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" "Enabled" 1
+                }
+
+                # 9. Consumer Features (Bloatware)
+                if ($cfg.Consumer) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Windows Consumer Features (Auto-Installs)")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" "DisableWindowsConsumerFeatures" 1
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" "DisableWindowsConsumerFeatures" 0
+                }
+                
+                # 10. Windows Error Reporting
+                if ($cfg.WER) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Windows Error Reporting (Crash Dumps)")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" "Disabled" 1
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" "Disabled" 0
+                }
+
+                # 11. Feedback Prompts
+                if ($cfg.Feedback) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Feedback Prompts")
+                    Set-PrivacyRegKey "HKCU:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "DoNotShowFeedbackNotifications" 1
+                } else {
+                    Set-PrivacyRegKey "HKCU:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "DoNotShowFeedbackNotifications" 0
+                }
+
+                # 12. Bing Web Search
+                if ($cfg.BingSearch) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Bing Web Search in Start Menu")
+                    Set-PrivacyRegKey "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 1
+                } else {
+                    Set-PrivacyRegKey "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 0
+                }
+
+                # 13. Copilot
+                if ($cfg.Copilot) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Windows Copilot & AI Features")
+                    Set-PrivacyRegKey "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot" "TurnOffWindowsCopilot" 1
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot" "TurnOffWindowsCopilot" 0
+                }
+
+                # 14. Widgets / News & Interests
+                if ($cfg.Widgets) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Taskbar Widgets / News & Interests")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Dsh" "AllowNewsAndInterests" 0
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Dsh" "AllowNewsAndInterests" 1
+                }
+
+                # 15. Wi-Fi Sense
+                if ($cfg.WifiSense) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Wi-Fi Sense (Shared Hotspots)")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" "AutoConnectAllowedOEM" 0
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" "AutoConnectAllowedOEM" 1
+                }
+
+                $Hash.LogQueue.Enqueue("[+] Privacy settings applied successfully.")
+                $Hash.Result = "Success"
+            }
         }
     } catch {
         $Hash.Result = "Error: $($_.Exception.Message)"
@@ -1138,7 +1391,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $C
     while ($syncHash.LogQueue.TryDequeue([ref]$dummy)) {}
 
     # Auto-expand the log panel if we are making system changes
-    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilResetNet', 'UtilSMB', 'UtilFileSharing', 'UtilDriverUpdate', 'UtilSDIO', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs')) {
+    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilResetNet', 'UtilSMB', 'UtilFileSharing', 'UtilDriverUpdate', 'UtilSDIO', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs', 'ApplyPrivacy')) {
         $LogExpander.IsExpanded = $true
     }
     
@@ -1416,9 +1669,64 @@ $timer.Add_Tick({
                     $StatusText.Text = if ($res -match "Reboot") { "Drivers installed! System reboot required." } else { "Driver scan and update process completed." } 
                 }
                 'UtilSDIO'         { $StatusText.Text = "Snappy Driver Installer process completed." }
+                'ApplyPrivacy'     { $StatusText.Text = "Privacy and Ad settings applied successfully." }
             }
         }
     }
+})
+
+# --- Privacy Check/Read Function ---
+function Read-PrivacyStates {
+    # Helper to read registry silently
+    function Get-PrivacyValue($Path, $Name, $ExpectedDisabledValue) {
+        try {
+            $val = (Get-ItemProperty -Path $Path -Name $Name -ErrorAction Stop).$Name
+            return ($val -eq $ExpectedDisabledValue)
+        } catch { return $false }
+    }
+    
+    $ChkTelemetry.IsChecked   = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 0
+    $ChkActivity.IsChecked    = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" "EnableActivityFeed" 0
+    $ChkTailoredExp.IsChecked = Get-PrivacyValue "HKCU:\Software\Policies\Microsoft\Windows\CloudContent" "DisableTailoredExperiencesWithDiagnosticData" 1
+    $ChkWER.IsChecked         = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" "Disabled" 1
+    $ChkFeedback.IsChecked    = Get-PrivacyValue "HKCU:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "DoNotShowFeedbackNotifications" 1
+    $ChkBingSearch.IsChecked  = Get-PrivacyValue "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 1
+    $ChkStartAds.IsChecked    = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-338388Enabled" 0
+    $ChkLockScreenAds.IsChecked = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-338387Enabled" 0
+    $ChkExplorerAds.IsChecked = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowSyncProviderNotifications" 0
+    $ChkWelcomeExp.IsChecked  = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-310093Enabled" 0
+    $ChkAdId.IsChecked        = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" "Enabled" 0
+    $ChkCopilot.IsChecked     = Get-PrivacyValue "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot" "TurnOffWindowsCopilot" 1
+    $ChkWidgets.IsChecked     = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Dsh" "AllowNewsAndInterests" 0
+    $ChkConsumer.IsChecked    = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" "DisableWindowsConsumerFeatures" 1
+    $ChkWifiSense.IsChecked   = Get-PrivacyValue "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" "AutoConnectAllowedOEM" 0
+}
+
+$RefreshPrivacyBtn.Add_Click({
+    Read-PrivacyStates
+    $StatusText.Text = "Privacy settings refreshed from Registry."
+})
+
+$ApplyPrivacyBtn.Add_Click({
+    $cfg = @{
+        Telemetry     = $ChkTelemetry.IsChecked -eq $true
+        Activity      = $ChkActivity.IsChecked -eq $true
+        TailoredExp   = $ChkTailoredExp.IsChecked -eq $true
+        WER           = $ChkWER.IsChecked -eq $true
+        Feedback      = $ChkFeedback.IsChecked -eq $true
+        BingSearch    = $ChkBingSearch.IsChecked -eq $true
+        StartAds      = $ChkStartAds.IsChecked -eq $true
+        LockScreenAds = $ChkLockScreenAds.IsChecked -eq $true
+        ExplorerAds   = $ChkExplorerAds.IsChecked -eq $true
+        WelcomeExp    = $ChkWelcomeExp.IsChecked -eq $true
+        AdId          = $ChkAdId.IsChecked -eq $true
+        Copilot       = $ChkCopilot.IsChecked -eq $true
+        Widgets       = $ChkWidgets.IsChecked -eq $true
+        Consumer      = $ChkConsumer.IsChecked -eq $true
+        WifiSense     = $ChkWifiSense.IsChecked -eq $true
+    }
+    $createRestore = $CreateRestorePointPrivacyCheck.IsChecked -eq $true
+    Start-WingetJob -Action "ApplyPrivacy" -Query $cfg -Id "" -StatusMsg "Applying privacy settings... Please wait." -CreateRestore $createRestore
 })
 
 # 7. Map Button Clicks
@@ -1733,6 +2041,7 @@ $UtilSDIOBtn.Add_Click({
 
 # --- Auto-Load Installed Apps on Startup ---
 $Window.Add_Loaded({
+    Read-PrivacyStates # Read initial privacy states
     Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg "Loading installed packages and checking for updates... This might take a moment."
 })
 
