@@ -64,7 +64,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
             Remove-Item $bundlePath -ErrorAction SilentlyContinue
             
             $dlWindow.Close()
-            [System.Windows.MessageBox]::Show("Winget was installed successfully! Starting Mini WingetUI...", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+            [System.Windows.MessageBox]::Show("Winget was installed successfully! Starting WinToolsUI...", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
         } catch {
             $dlWindow.Close()
             [System.Windows.MessageBox]::Show("Failed to install Winget. Error: $($_.Exception.Message)`n`nPlease install 'App Installer' manually from the Microsoft Store.", "Install Failed", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
@@ -81,7 +81,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Mini WingetUI" Height="600" Width="850" WindowStartupLocation="CenterScreen">
+        Title="WinToolsUI" Height="600" Width="850" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <!-- Dark Theme Dictionary -->
         <SolidColorBrush x:Key="WindowBackground" Color="#1E1E1E"/>
@@ -376,6 +376,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                         <Button Name="UtilResetWUBtn" Content="Reset Windows Update" Padding="10,8" Margin="0,0,10,10"/>
                                         <Button Name="UtilRestorePointBtn" Content="Create System Restore Point" Padding="10,8" Margin="0,0,10,10"/>
                                         <Button Name="UtilOpenRestoreBtn" Content="Open System Restore" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilLongPathBtn" Content="Enable Long Paths (Remove 260 Char Limit)" Padding="10,8" Margin="0,0,10,10"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -492,6 +493,7 @@ $UtilSysScanBtn = $Window.FindName("UtilSysScanBtn")
 $UtilResetWUBtn = $Window.FindName("UtilResetWUBtn")
 $UtilRestorePointBtn = $Window.FindName("UtilRestorePointBtn")
 $UtilOpenRestoreBtn = $Window.FindName("UtilOpenRestoreBtn")
+$UtilLongPathBtn = $Window.FindName("UtilLongPathBtn")
 $UtilResetNetBtn = $Window.FindName("UtilResetNetBtn")
 $UtilSMBBtn = $Window.FindName("UtilSMBBtn")
 $UtilFileSharingBtn = $Window.FindName("UtilFileSharingBtn")
@@ -506,14 +508,14 @@ $CreateRestorePointUpdateCheck = $Window.FindName("CreateRestorePointUpdateCheck
 
 # --- Apply Admin Status to UI ---
 if ($isActualAdmin) {
-    $Window.Title = "Mini WingetUI (Administrator)"
+    $Window.Title = "WinToolsUI (Administrator)"
     $AdminInstallCheck.IsChecked = $true
     $AdminInstallCheck.IsEnabled = $true
     
     $CreateRestorePointInstallCheck.IsEnabled = $true
     $CreateRestorePointUpdateCheck.IsEnabled = $true
 } else {
-    $Window.Title = "Mini WingetUI (Standard User)"
+    $Window.Title = "WinToolsUI (Standard User)"
     $AdminInstallCheck.IsChecked = $false
     $AdminInstallCheck.IsEnabled = $false
     $AdminInstallCheck.Content = "Install for Current User (No Admin)"
@@ -534,6 +536,7 @@ if ($isActualAdmin) {
     $UtilResetWUBtn.IsEnabled = $false
     $UtilRestorePointBtn.IsEnabled = $false
     $UtilOpenRestoreBtn.IsEnabled = $false
+    $UtilLongPathBtn.IsEnabled = $false
     $UtilResetNetBtn.IsEnabled = $false
     $UtilSMBBtn.IsEnabled = $false
     $UtilFileSharingBtn.IsEnabled = $false
@@ -722,7 +725,7 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before installation...")
                     try {
                         Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-                        Checkpoint-Computer -Description "Mini WingetUI Install" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                        Checkpoint-Computer -Description "WinToolsUI Install" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
                         $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
                     } catch {
                         $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
@@ -756,7 +759,7 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before uninstallation...")
                     try {
                         Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-                        Checkpoint-Computer -Description "Mini WingetUI Uninstall" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                        Checkpoint-Computer -Description "WinToolsUI Uninstall" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
                         $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
                     } catch {
                         $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
@@ -783,7 +786,7 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before update...")
                     try {
                         Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-                        Checkpoint-Computer -Description "Mini WingetUI Update" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                        Checkpoint-Computer -Description "WinToolsUI Update" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
                         $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
                     } catch {
                         $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
@@ -857,7 +860,7 @@ $bgJobBlock = {
                     # Try to enable System Restore on the main OS drive just in case it is disabled
                     Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
                     
-                    Checkpoint-Computer -Description "Mini WingetUI Checkpoint" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+                    Checkpoint-Computer -Description "WinToolsUI Checkpoint" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
                     
                     $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
                     $Hash.Result = "Success"
@@ -967,6 +970,16 @@ $bgJobBlock = {
                     $Hash.Result = "Error: $($_.Exception.Message)"
                 }
             }
+            'UtilLongPath' {
+                $Hash.LogQueue.Enqueue(">>> Enabling Win32 Long Paths (Removing MAX_PATH limit)...")
+                try {
+                    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -ErrorAction Stop
+                    $Hash.LogQueue.Enqueue("Successfully enabled Long Paths in the registry.")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.Result = "Error: $($_.Exception.Message)"
+                }
+            }
             'UtilDriverUpdate' {
                 try {
                     $Hash.LogQueue.Enqueue(">>> Connecting to Microsoft Update Catalog...")
@@ -1064,7 +1077,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $C
     while ($syncHash.LogQueue.TryDequeue([ref]$dummy)) {}
 
     # Auto-expand the log panel if we are making system changes
-    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilResetNet', 'UtilSMB', 'UtilFileSharing', 'UtilDriverUpdate', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs')) {
+    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilResetNet', 'UtilSMB', 'UtilFileSharing', 'UtilDriverUpdate', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs')) {
         $LogExpander.IsExpanded = $true
     }
     
@@ -1329,6 +1342,7 @@ $timer.Add_Tick({
                 'UtilSystemScan' { $StatusText.Text = "System scan and repair completed." }
                 'UtilResetWU'    { $StatusText.Text = "Windows Update services reset completed." }
                 'UtilRestorePoint' { $StatusText.Text = "System restore point created successfully." }
+                'UtilLongPath'   { $StatusText.Text = "Long Paths have been enabled successfully." }
                 'UtilResetNet'   { $StatusText.Text = "Network adapters reset successfully." }
                 'UtilSMB'        { $StatusText.Text = "SMBv1 protocol has been enabled." }
                 'UtilFileSharing'{ $StatusText.Text = "File and Printer Sharing enabled globally." }
@@ -1598,6 +1612,11 @@ $UtilOpenRestoreBtn.Add_Click({
     } catch {
         [System.Windows.MessageBox]::Show("Failed to open System Restore. It may be disabled on this system.", "Error", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
     }
+})
+
+$UtilLongPathBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will modify the registry to remove the 260-character path limit (MAX_PATH) in Windows.`n`nThis allows applications to access deeply nested files without errors. Continue?", "Enable Long Paths", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilLongPath" -Query "" -Id "" -StatusMsg "Enabling Long Paths... Please wait." }
 })
 
 $UtilResetNetBtn.Add_Click({
