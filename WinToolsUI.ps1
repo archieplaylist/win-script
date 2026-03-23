@@ -680,7 +680,7 @@ $bgJobBlock = {
                 
                 $raw = @()
                 $Hash.LogQueue.Enqueue(">>> Executing: winget search ""$Query""")
-                $wingetArgs = @("search", $Query, "--count", "40", "--accept-source-agreements")
+                $wingetArgs = @("search", $Query, "--count", "40", "--accept-source-agreements", "--disable-interactivity")
                 & winget @wingetArgs 2>&1 | ForEach-Object {
                     $line = $_.ToString()
                     $Hash.LogQueue.Enqueue($line)
@@ -709,7 +709,8 @@ $bgJobBlock = {
             'Installed' {
                 $raw = @()
                 $Hash.LogQueue.Enqueue(">>> Executing: winget list")
-                & winget list --accept-source-agreements 2>&1 | ForEach-Object {
+                $wingetArgs = @("list", "--accept-source-agreements", "--disable-interactivity")
+                & winget @wingetArgs 2>&1 | ForEach-Object {
                     $line = $_.ToString()
                     $Hash.LogQueue.Enqueue($line)
                     $raw += $line
@@ -807,7 +808,7 @@ $bgJobBlock = {
             'ShowDetails' {
                 $raw = @()
                 $Hash.LogQueue.Enqueue(">>> Executing: winget show $Id")
-                $wingetArgs = @("show", "--id", $Id, "--exact", "--accept-source-agreements")
+                $wingetArgs = @("show", "--id", $Id, "--exact", "--accept-source-agreements", "--disable-interactivity")
                 & winget @wingetArgs 2>&1 | ForEach-Object {
                     $line = $_.ToString()
                     $Hash.LogQueue.Enqueue($line)
@@ -1191,23 +1192,34 @@ $timer.Add_Tick({
             # Route the data to the correct Grid based on what action just finished
             switch ($action) {
                 'Search' {
-                    $DiscoverGrid.ItemsSource = $res
-                    $StatusText.Text = "Search complete. Found $($res.Count) packages."
+                    if ($res -ne $null -and $res.Count -gt 0) {
+                        $DiscoverGrid.ItemsSource = $res
+                        $StatusText.Text = "Search complete. Found $($res.Count) packages."
+                    } else {
+                        $DiscoverGrid.ItemsSource = $null
+                        $StatusText.Text = "No results found. (If you are offline, search will not work)."
+                    }
                 }
                 'Installed' {
-                    # Sort so packages with updates are on top, then sort alphabetically
-                    $script:AllInstalledApps = @($res | Sort-Object -Property @{Expression="HasUpdate"; Descending=$true}, Name)
-                    
-                    # Split into two lists based on standard Windows Store / Appx / MSIX heuristics
-                    $desktopApps = @($script:AllInstalledApps | Where-Object { $_.Source -ne 'msstore' -and $_.Id -notmatch '_[a-zA-Z0-9]{13}$' -and $_.Id -notmatch '^MSIX\\' })
-                    $windowsApps = @($script:AllInstalledApps | Where-Object { $_.Source -eq 'msstore' -or $_.Id -match '_[a-zA-Z0-9]{13}$' -or $_.Id -match '^MSIX\\' })
-                    
-                    $InstalledGrid.ItemsSource = $desktopApps
-                    $WindowsAppsGrid.ItemsSource = $windowsApps
-                    
-                    # Count how many packages have updates
-                    $updateCount = @($res | Where-Object { $_.HasUpdate -eq $true }).Count
-                    $StatusText.Text = "Loaded $($desktopApps.Count) Desktop Apps and $($windowsApps.Count) Windows Apps. Found $updateCount available updates."
+                    if ($res -ne $null -and $res.Count -gt 0) {
+                        # Sort so packages with updates are on top, then sort alphabetically
+                        $script:AllInstalledApps = @($res | Sort-Object -Property @{Expression="HasUpdate"; Descending=$true}, Name)
+                        
+                        # Split into two lists based on standard Windows Store / Appx / MSIX heuristics
+                        $desktopApps = @($script:AllInstalledApps | Where-Object { $_.Source -ne 'msstore' -and $_.Id -notmatch '_[a-zA-Z0-9]{13}$' -and $_.Id -notmatch '^MSIX\\' })
+                        $windowsApps = @($script:AllInstalledApps | Where-Object { $_.Source -eq 'msstore' -or $_.Id -match '_[a-zA-Z0-9]{13}$' -or $_.Id -match '^MSIX\\' })
+                        
+                        $InstalledGrid.ItemsSource = $desktopApps
+                        $WindowsAppsGrid.ItemsSource = $windowsApps
+                        
+                        # Count how many packages have updates
+                        $updateCount = @($res | Where-Object { $_.HasUpdate -eq $true }).Count
+                        $StatusText.Text = "Loaded $($desktopApps.Count) Desktop Apps and $($windowsApps.Count) Windows Apps. Found $updateCount available updates."
+                    } else {
+                        $InstalledGrid.ItemsSource = $null
+                        $WindowsAppsGrid.ItemsSource = $null
+                        $StatusText.Text = "No apps found (or Winget failed to connect to the network)."
+                    }
                 }
                 'Install' { 
                     $StatusText.Text = "Installation finished successfully." 
