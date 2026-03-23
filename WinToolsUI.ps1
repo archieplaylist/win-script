@@ -433,9 +433,10 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                             <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="10,0,0,15">
                                 <StackPanel>
                                     <TextBlock Text="Hardware &amp; Drivers" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
-                                    <TextBlock Text="Scan Microsoft Update for missing or outdated hardware drivers and automatically install them." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <TextBlock Text="Download missing or outdated hardware drivers via Microsoft Update or Snappy Driver Installer." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
                                     <WrapPanel>
-                                        <Button Name="UtilDriverBtn" Content="Update Hardware Drivers" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilDriverBtn" Content="Official Microsoft Drivers" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilSDIOBtn" Content="Snappy Driver Installer (SDIO)" Padding="10,8" Margin="0,0,10,10"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -498,6 +499,7 @@ $UtilResetNetBtn = $Window.FindName("UtilResetNetBtn")
 $UtilSMBBtn = $Window.FindName("UtilSMBBtn")
 $UtilFileSharingBtn = $Window.FindName("UtilFileSharingBtn")
 $UtilDriverBtn = $Window.FindName("UtilDriverBtn")
+$UtilSDIOBtn = $Window.FindName("UtilSDIOBtn")
 $UtilWingetRepairBtn = $Window.FindName("UtilWingetRepairBtn")
 $UtilStoreRepairBtn = $Window.FindName("UtilStoreRepairBtn")
 $UtilDiskCleanupBtn = $Window.FindName("UtilDiskCleanupBtn")
@@ -541,6 +543,7 @@ if ($isActualAdmin) {
     $UtilSMBBtn.IsEnabled = $false
     $UtilFileSharingBtn.IsEnabled = $false
     $UtilDriverBtn.IsEnabled = $false
+    $UtilSDIOBtn.IsEnabled = $false
     $UtilWingetRepairBtn.IsEnabled = $false
     $UtilStoreRepairBtn.IsEnabled = $false
     $UtilDiskCleanupBtn.IsEnabled = $false
@@ -573,6 +576,7 @@ $QueueGrid.ItemsSource = $script:InstallQueue
 # 3. Setup the Background Runspace (The Backend Engine)
 $syncHash = [hashtable]::Synchronized(@{})
 $syncHash.LogQueue = [System.Collections.Concurrent.ConcurrentQueue[string]]::new()
+$syncHash.AppPath = if ($PSCommandPath) { Split-Path -Parent $PSCommandPath } else { $PWD.Path }
 $runspace = [runspacefactory]::CreateRunspace()
 $runspace.Open()
 $runspace.SessionStateProxy.SetVariable("syncHash", $syncHash)
@@ -1055,6 +1059,63 @@ $bgJobBlock = {
                     $Hash.Result = "Error: $($_.Exception.Message)"
                 }
             }
+            'UtilSDIO' {
+                $Hash.LogQueue.Enqueue(">>> Initializing Snappy Driver Installer Origin (SDIO)...")
+                
+                # Create the dedicated folder
+                $SDIODir = Join-Path $Hash.AppPath "SDIO"
+                if (-not (Test-Path $SDIODir)) {
+                    New-Item -ItemType Directory -Path $SDIODir -Force | Out-Null
+                }
+                
+                # Check for existing executables
+                $SDIO_x64 = (Get-ChildItem -Path $SDIODir -Filter "SDIO_x64*.exe" | Select-Object -First 1).FullName
+                $SDIO_x86 = (Get-ChildItem -Path $SDIODir -Filter "SDIO_R*.exe" | Select-Object -First 1).FullName
+                $SDIOPath = if ($SDIO_x64) { $SDIO_x64 } else { $SDIO_x86 }
+
+                if (-not $SDIOPath) {
+                    $Hash.LogQueue.Enqueue(">>> SDIO not found locally. Downloading the latest version...")
+                    $ZipPath = Join-Path $SDIODir "SDIO_Latest.zip"
+                    $DownloadUrl = "https://www.glenn.delahoy.com/downloads/sdio/SDIO.zip"
+                    
+                    try {
+                        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+                        Invoke-WebRequest -Uri $DownloadUrl -OutFile $ZipPath -UseBasicParsing
+                        
+                        $Hash.LogQueue.Enqueue(">>> Extracting SDIO to dedicated folder...")
+                        Expand-Archive -Path $ZipPath -DestinationPath $SDIODir -Force
+                        Remove-Item -Path $ZipPath -Force
+                        
+                        # Recheck after extraction
+                        $SDIO_x64 = (Get-ChildItem -Path $SDIODir -Filter "SDIO_x64*.exe" | Select-Object -First 1).FullName
+                        $SDIO_x86 = (Get-ChildItem -Path $SDIODir -Filter "SDIO_R*.exe" | Select-Object -First 1).FullName
+                        $SDIOPath = if ($SDIO_x64) { $SDIO_x64 } else { $SDIO_x86 }
+                        
+                        if ($SDIOPath) {
+                            $Hash.LogQueue.Enqueue("[+] SDIO successfully downloaded and extracted!")
+                        }
+                    } catch {
+                        $Hash.LogQueue.Enqueue("[-] Error downloading SDIO: $($_.Exception.Message)")
+                        $Hash.Result = "Error: $($_.Exception.Message)"
+                        return
+                    }
+                }
+                
+                if ($SDIOPath) {
+                    $Hash.LogQueue.Enqueue(">>> Launching Snappy Driver Installer...")
+                    $Hash.LogQueue.Enqueue("    -> Updating indexes, analyzing hardware, and installing drivers.")
+                    $Hash.LogQueue.Enqueue("    -> (App will run minimized in the taskbar. This may take several minutes...)")
+                    
+                    # Changed from Hidden to Minimized because SDIO overrides strict hidden modes
+                    Start-Process -FilePath $SDIOPath -ArgumentList "-autoupdate", "-autoinstall", "-autoclose" -WindowStyle Minimized -Wait
+                    
+                    $Hash.LogQueue.Enqueue("[+] SDIO Process Finished.")
+                    $Hash.Result = "Success (SDIO)"
+                } else {
+                    $Hash.LogQueue.Enqueue("[-] SDIO execution aborted. Executable not found after extraction.")
+                    $Hash.Result = "Error: SDIO executable missing."
+                }
+            }
         }
     } catch {
         $Hash.Result = "Error: $($_.Exception.Message)"
@@ -1077,7 +1138,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $C
     while ($syncHash.LogQueue.TryDequeue([ref]$dummy)) {}
 
     # Auto-expand the log panel if we are making system changes
-    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilResetNet', 'UtilSMB', 'UtilFileSharing', 'UtilDriverUpdate', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs')) {
+    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilResetNet', 'UtilSMB', 'UtilFileSharing', 'UtilDriverUpdate', 'UtilSDIO', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs')) {
         $LogExpander.IsExpanded = $true
     }
     
@@ -1354,6 +1415,7 @@ $timer.Add_Tick({
                 'UtilDriverUpdate' { 
                     $StatusText.Text = if ($res -match "Reboot") { "Drivers installed! System reboot required." } else { "Driver scan and update process completed." } 
                 }
+                'UtilSDIO'         { $StatusText.Text = "Snappy Driver Installer process completed." }
             }
         }
     }
@@ -1662,6 +1724,11 @@ $UtilIconCacheBtn.Add_Click({
 $UtilDriverBtn.Add_Click({
     $msgResult = [System.Windows.MessageBox]::Show("This will scan Microsoft Update for missing or outdated hardware drivers, download them, and automatically install them.`n`nThe scan process can take several minutes. Continue?", "Update Hardware Drivers", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilDriverUpdate" -Query "" -Id "" -StatusMsg "Scanning for missing drivers... Please wait." }
+})
+
+$UtilSDIOBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will launch Snappy Driver Installer Origin (SDIO).`n`nIf this is your first time, it will automatically download the tool and extract it to an 'SDIO' folder next to this app.`n`nContinue?", "Snappy Driver Installer", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilSDIO" -Query "" -Id "" -StatusMsg "Initializing Snappy Driver Installer... Please wait." }
 })
 
 # --- Auto-Load Installed Apps on Startup ---
