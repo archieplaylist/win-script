@@ -435,6 +435,39 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 
             <!-- NEW: Utilities Tab -->
             <TabItem Header="Utilities">
+                <TabItem.Resources>
+                    <!-- Make all utility buttons pop more by defining a custom ControlTemplate for them -->
+                    <Style TargetType="Button">
+                        <Setter Property="Background" Value="#3E3E42"/>
+                        <Setter Property="Foreground" Value="{StaticResource TextForeground}"/>
+                        <Setter Property="BorderBrush" Value="#555555"/>
+                        <Setter Property="BorderThickness" Value="1"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Cursor" Value="Hand"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="Button">
+                                    <Border Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="3">
+                                        <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
+                                    </Border>
+                                    <ControlTemplate.Triggers>
+                                        <Trigger Property="IsMouseOver" Value="True">
+                                            <Setter Property="Background" Value="#54545C"/>
+                                        </Trigger>
+                                        <Trigger Property="IsPressed" Value="True">
+                                            <Setter Property="Background" Value="{StaticResource AccentColor}"/>
+                                            <Setter Property="Foreground" Value="White"/>
+                                        </Trigger>
+                                        <Trigger Property="IsEnabled" Value="False">
+                                            <Setter Property="Background" Value="#2D2D30"/>
+                                            <Setter Property="Foreground" Value="#666666"/>
+                                        </Trigger>
+                                    </ControlTemplate.Triggers>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </TabItem.Resources>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="15,20,15,15">
                         <TextBlock Text="System Utilities" FontWeight="Bold" FontSize="18" Foreground="{StaticResource AccentColor}" Margin="0,0,0,5"/>
