@@ -699,6 +699,25 @@ $bgJobBlock = {
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
     $OutputEncoding = [System.Text.Encoding]::UTF8
     
+    # Helper to create restore points and bypass the Windows 24-hour limit
+    function New-BypassRestorePoint($Desc) {
+        try {
+            Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
+            
+            # Bypass the Windows 1-per-24-hours limit
+            $srKey = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore"
+            if (-not (Test-Path $srKey)) { New-Item -Path $srKey -Force -ErrorAction SilentlyContinue | Out-Null }
+            Set-ItemProperty -Path $srKey -Name "SystemRestorePointCreationFrequency" -Value 0 -Type DWord -ErrorAction SilentlyContinue
+            
+            Checkpoint-Computer -Description $Desc -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+            $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
+            return $true
+        } catch {
+            $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)).")
+            return $false
+        }
+    }
+
     # Internal parser for tabular winget output
     function ConvertFrom-WingetOutput($raw) {
         $parsed = @()
@@ -832,13 +851,7 @@ $bgJobBlock = {
             'Install' {
                 if ($CreateRestore) {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before installation...")
-                    try {
-                        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-                        Checkpoint-Computer -Description "WinToolsUI Install" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
-                        $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
-                    } catch {
-                        $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
-                    }
+                    New-BypassRestorePoint -Desc "WinToolsUI Install" | Out-Null
                 }
                 foreach ($targetId in @($Id)) {
                     $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget install $targetId")
@@ -866,13 +879,7 @@ $bgJobBlock = {
             'Uninstall' {
                 if ($CreateRestore) {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before uninstallation...")
-                    try {
-                        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-                        Checkpoint-Computer -Description "WinToolsUI Uninstall" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
-                        $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
-                    } catch {
-                        $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
-                    }
+                    New-BypassRestorePoint -Desc "WinToolsUI Uninstall" | Out-Null
                 }
                 foreach ($targetId in @($Id)) {
                     $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget uninstall $targetId")
@@ -893,13 +900,7 @@ $bgJobBlock = {
             'Update' {
                 if ($CreateRestore) {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before update...")
-                    try {
-                        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-                        Checkpoint-Computer -Description "WinToolsUI Update" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
-                        $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
-                    } catch {
-                        $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
-                    }
+                    New-BypassRestorePoint -Desc "WinToolsUI Update" | Out-Null
                 }
                 foreach ($targetId in @($Id)) {
                     $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget upgrade $targetId")
@@ -965,17 +966,10 @@ $bgJobBlock = {
             }
             'UtilRestorePoint' {
                 $Hash.LogQueue.Enqueue(">>> Initializing System Restore Point creation...")
-                try {
-                    # Try to enable System Restore on the main OS drive just in case it is disabled
-                    Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-                    
-                    Checkpoint-Computer -Description "WinToolsUI Checkpoint" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
-                    
-                    $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
+                $success = New-BypassRestorePoint -Desc "WinToolsUI Checkpoint"
+                if ($success) {
                     $Hash.Result = "Success"
-                } catch {
-                    $Hash.LogQueue.Enqueue("Error: $($_.Exception.Message)")
-                    $Hash.LogQueue.Enqueue("Note: Windows often restricts creating automatic restore points to once every 24 hours.")
+                } else {
                     $Hash.Result = "Error"
                 }
             }
@@ -1224,13 +1218,7 @@ $bgJobBlock = {
             'ApplyPrivacy' {
                 if ($CreateRestore) {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before applying privacy settings...")
-                    try {
-                        Enable-ComputerRestore -Drive "$env:SystemDrive\" -ErrorAction SilentlyContinue
-                        Checkpoint-Computer -Description "WinToolsUI Privacy Settings" -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
-                        $Hash.LogQueue.Enqueue("System Restore Point created successfully.")
-                    } catch {
-                        $Hash.LogQueue.Enqueue("Warning: Failed to create restore point ($($_.Exception.Message)). Continuing anyway...")
-                    }
+                    New-BypassRestorePoint -Desc "WinToolsUI Privacy Settings" | Out-Null
                 }
                 
                 # Helper function for setting registry keys deeply
