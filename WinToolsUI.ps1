@@ -82,7 +82,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="WinToolsUI" Height="600" Width="850" WindowStartupLocation="CenterScreen">
+        Title="WinToolsUI" Height="620" Width="870" WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <!-- Dark Theme Dictionary -->
         <SolidColorBrush x:Key="WindowBackground" Color="#1E1E1E"/>
@@ -391,77 +391,134 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                 </Grid>
             </TabItem>
             
-            <!-- NEW: Privacy & Ads Tab -->
-            <TabItem Header="Privacy &amp; Ads">
+            <!-- NEW: Optimize Tab (Combines Privacy & Performance) -->
+            <TabItem Header="Optimize">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     
-                    <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Row="0">
-                        <StackPanel Margin="5,10,5,15">
-                            <TextBlock Text="Privacy &amp; Ad Blocker" FontWeight="Bold" FontSize="18" Foreground="{StaticResource AccentColor}" Margin="0,0,0,5"/>
-                            <TextBlock Text="Toggle the switches below to disable telemetry tracking and system-wide advertisements." Foreground="#AAAAAA" Margin="0,0,0,10"/>
-                            <TextBlock Name="PrivacyAdminWarning" Text="Administrator privileges are required to apply system-level privacy settings." Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
-                            
-                            <!-- Telemetry Box -->
-                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
-                                <StackPanel>
-                                    <TextBlock Text="Telemetry &amp; Data Collection" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
-                                    <CheckBox Name="ChkTelemetry" Content="Disable Diagnostic Data &amp; Telemetry (DiagTrack)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkActivity" Content="Disable Activity History &amp; Timeline Tracking" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkTailoredExp" Content="Disable Tailored Experiences (Diagnostic data-based ads)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkWER" Content="Disable Windows Error Reporting (Prevent crash dump uploads)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkFeedback" Content="Disable Feedback Prompts (Stop Microsoft surveys)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                </StackPanel>
-                            </Border>
-                            
-                            <!-- Ads Box -->
-                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
-                                <StackPanel>
-                                    <TextBlock Text="System Annoyances &amp; Ads" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
-                                    <CheckBox Name="ChkBingSearch" Content="Disable Bing Web Search in Start Menu" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkStartAds" Content="Disable Start Menu Suggestions (Promoted apps)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkLockScreenAds" Content="Disable Lock Screen Tips &amp; Fun Facts (Spotlight ads)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkExplorerAds" Content="Disable File Explorer Notifications (OneDrive/Office 365 banners)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkWelcomeExp" Content="Disable Windows Welcome Experience (Post-update nagging)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkAdId" Content="Disable Advertising ID (Targeted app ads)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                </StackPanel>
-                            </Border>
+                    <TabControl Name="OptimizeSubTabs" Grid.Row="0" Margin="0,0,0,10" BorderThickness="0" Background="Transparent">
+                        <!-- Privacy & Ads Sub-Tab -->
+                        <TabItem Header="Privacy &amp; Ads">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="5,10,5,15">
+                                    <TextBlock Text="Privacy &amp; Ad Blocker" FontWeight="Bold" FontSize="18" Foreground="{StaticResource AccentColor}" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Toggle the switches below to disable telemetry tracking and system-wide advertisements. Hover over an item for details." Foreground="#AAAAAA" Margin="0,0,0,10"/>
+                                    <TextBlock Name="PrivacyAdminWarning" Text="Administrator privileges are required to apply system-level privacy settings." Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                                    
+                                    <!-- Telemetry Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Telemetry &amp; Data Collection" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkTelemetry" Content="Disable Diagnostic Data &amp; Telemetry (DiagTrack)" ToolTip="Stops Windows from sending diagnostic data, typing data, and usage metrics to Microsoft." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkLocation" Content="Disable System-wide Location Services" ToolTip="Prevents Windows and apps from accessing your device's geographical location." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkActivity" Content="Disable Activity History &amp; Timeline Tracking" ToolTip="Stops Windows from tracking the files you open and websites you visit in the Timeline." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppLaunch" Content="Disable App Launch Tracking (Start/Search history)" ToolTip="Prevents Windows from personalizing your Start menu based on the apps you launch." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkLanguage" Content="Disable Language List Website Access" ToolTip="Prevents websites from seeing your locally installed languages." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkSpeech" Content="Disable Online Speech Recognition" ToolTip="Disables cloud-based speech recognition services used for dictation and Cortana." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkTailoredExp" Content="Disable Tailored Experiences (Diagnostic data-based ads)" ToolTip="Stops Microsoft from using your diagnostic data to offer tailored tips, ads, and recommendations." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkWER" Content="Disable Windows Error Reporting (Prevent crash dump uploads)" ToolTip="Stops Windows from automatically uploading crash dumps and error logs to Microsoft." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkFeedback" Content="Disable Feedback Prompts (Stop Microsoft surveys)" ToolTip="Disables those annoying 'How likely are you to recommend Windows?' popup surveys." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- Ads Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="System Annoyances &amp; Ads" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkWorkplace" Content="Block 'Allow organization to manage device' Prompts" ToolTip="Stops the 'Allow my organization to manage my device' prompt when signing into work/school accounts." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkOneDrive" Content="Disable OneDrive Automatic Folder Backups" ToolTip="Prevents OneDrive from automatically hijacking your Desktop, Documents, and Pictures folders for backup." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkBingSearch" Content="Disable Bing Web Search in Start Menu" ToolTip="Removes Bing web search results from the Start Menu, making local searches much faster and private." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkStartAds" Content="Disable Start Menu Suggestions (Promoted apps)" ToolTip="Removes 'suggested' (promoted) apps from appearing in your Start Menu." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkLockScreenAds" Content="Disable Lock Screen Tips &amp; Fun Facts (Spotlight ads)" ToolTip="Disables tips, tricks, and promotional content on the Windows Lock Screen." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkExplorerAds" Content="Disable File Explorer Notifications (OneDrive/Office 365 banners)" ToolTip="Disables promotional banners (like Office 365 offers) inside File Explorer." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkWelcomeExp" Content="Disable Windows Welcome Experience (Post-update nagging)" ToolTip="Stops the 'Let's finish setting up your device' full-screen prompt after major Windows updates." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAdId" Content="Disable Advertising ID (Targeted app ads)" ToolTip="Prevents apps from using a unique advertising ID to show you targeted ads." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
 
-                            <!-- AI & Features Box -->
-                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
-                                <StackPanel>
-                                    <TextBlock Text="Windows Features &amp; AI" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
-                                    <CheckBox Name="ChkCopilot" Content="Disable Windows Copilot &amp; AI Features" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                    <CheckBox Name="ChkWidgets" Content="Disable Taskbar Widgets / News &amp; Interests" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
-                                </StackPanel>
-                            </Border>
+                                    <!-- AI & Features Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Windows Features, Security &amp; AI" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkBitLocker" Content="Prevent BitLocker Auto-Encryption (Windows 11)" ToolTip="(Windows 11) Prevents Windows from automatically encrypting your drives, which can slightly reduce SSD performance." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkCopilot" Content="Disable Windows Copilot &amp; AI Features" ToolTip="Removes the Windows Copilot icon and disables its integrated AI features." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkWidgets" Content="Disable Taskbar Widgets / News &amp; Interests" ToolTip="Removes the News &amp; Interests or Widgets panel from the Taskbar." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkMaintenance" Content="Disable Automatic System Maintenance" ToolTip="Stops Windows from running defrags, scans, and updates while the PC is idle." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
 
-                            <!-- Bloatware Box -->
-                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
-                                <StackPanel>
-                                    <TextBlock Text="Automatic Installations" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
-                                    <CheckBox Name="ChkConsumer" Content="Disable Windows Consumer Features (Prevents Candy Crush/TikTok auto-installs)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                    <!-- Bloatware Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Automatic Installations" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkConsumer" Content="Disable Windows Consumer Features (Prevents Candy Crush/TikTok auto-installs)" ToolTip="Prevents Windows from automatically downloading bloatware like Candy Crush or TikTok on new accounts." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- Network Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Network &amp; Remote Access" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkWifiSense" Content="Disable Wi-Fi Sense (Stops background open-network connections)" ToolTip="Stops your PC from automatically connecting to suggested open hotspots." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkRemoteAssist" Content="Disable Remote Assistance Connections" ToolTip="Disables the legacy Remote Assistance feature to reduce background listening ports." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
-                            </Border>
-                            
-                            <!-- Network Box -->
-                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
-                                <StackPanel>
-                                    <TextBlock Text="Network Privacy" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
-                                    <CheckBox Name="ChkWifiSense" Content="Disable Wi-Fi Sense (Stops background open-network connections)" Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                            </ScrollViewer>
+                        </TabItem>
+                        
+                        <!-- Performance & Gaming Sub-Tab -->
+                        <TabItem Header="Performance">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="5,10,5,15">
+                                    <TextBlock Text="Gaming &amp; Performance" FontWeight="Bold" FontSize="18" Foreground="{StaticResource AccentColor}" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Maximize your system's hardware potential, reduce input lag, and eliminate stutters. Hover over an item for details." Foreground="#AAAAAA" Margin="0,0,0,10"/>
+                                    <TextBlock Name="PerfAdminWarning" Text="Administrator privileges are required to apply system-level performance settings." Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
+                                    
+                                    <!-- Gaming & CPU -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Gaming &amp; Processing" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkGameMode" Content="Enable Windows Game Mode" ToolTip="Stops background activities (like Windows Update) and allocates more system resources to your active game." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkCpuPriority" Content="Optimize CPU/GPU Priority &amp; System Responsiveness for Gaming" ToolTip="Adjusts Windows thread scheduling to prioritize foreground gaming apps over background tasks." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkHwSchMode" Content="Enable Hardware-Accelerated GPU Scheduling (HAGS) (Requires Restart)" ToolTip="Offloads memory management from the CPU to the GPU, improving framerates and lowering latency." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkFSO" Content="Disable Fullscreen Optimizations (Fixes stutters in older games)" ToolTip="Disables Fullscreen Optimizations globally. This can fix micro-stutters and input lag in older DirectX 9/11 games." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkGameDVR" Content="Disable Xbox Game DVR &amp; Game Bar (Reduces background usage)" ToolTip="Disables the Xbox background recording service to free up CPU/GPU resources and reduce stuttering." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- Input & UI Responsiveness -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Input &amp; UI Responsiveness" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkMouseAccel" Content="Disable Enhance Pointer Precision (Mouse Acceleration) (Requires Restart)" ToolTip="Disables 'Enhance Pointer Precision', ensuring 1:1 raw mouse input for consistent aiming in FPS games." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkMenuDelay" Content="Disable Menu Show Delay (Instant menus)" ToolTip="Changes the default 400ms delay to 0ms so right-click context menus and submenus open instantly." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkStartupDelay" Content="Disable Startup Delay for Apps (Faster boot login)" ToolTip="Removes the default 10-second delay Windows adds before launching your startup apps, speeding up login." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- System & Network -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="System &amp; Network Background Tasks" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkBackgroundApps" Content="Disable Apps Running in Background" ToolTip="Stops UWP (Store) apps from running, updating, and sending notifications in the background while closed." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkNetworkThrottling" Content="Disable Network Throttling for Gaming" ToolTip="Removes the default limit on network packet processing, improving latency and ping for online games." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkStorageSense" Content="Enable Storage Sense (Auto-cleanup)" ToolTip="Automatically cleans up temporary files and the recycle bin when disk space runs low." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
                                 </StackPanel>
-                            </Border>
-                        </StackPanel>
-                    </ScrollViewer>
+                            </ScrollViewer>
+                        </TabItem>
+                    </TabControl>
                     
                     <!-- Action Buttons -->
                     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
-                        <CheckBox Name="CreateRestorePointPrivacyCheck" Content="Create Restore Point" IsChecked="True" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{StaticResource TextForeground}"/>
-                        <Button Name="RefreshPrivacyBtn" Content="Refresh Status" Padding="15,8" Margin="0,0,10,0"/>
-                        <Button Name="ApplyPrivacyBtn" Content="Apply Privacy Settings" Padding="15,8" Width="200" FontWeight="Bold" Foreground="#FF6B6B"/>
+                        <CheckBox Name="CreateRestorePointOptimizeCheck" Content="Create Restore Point" IsChecked="True" VerticalAlignment="Center" Margin="0,0,15,0" Foreground="{StaticResource TextForeground}"/>
+                        <Button Name="RefreshOptimizeBtn" Content="Refresh Status" Padding="15,8" Margin="0,0,10,0"/>
+                        <Button Name="ApplyOptimizeBtn" Content="Apply Optimizations" Padding="15,8" Width="200" FontWeight="Bold" Foreground="#FF6B6B"/>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -517,7 +574,8 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                         <Button Name="UtilResetWUBtn" Content="Reset Windows Update" Padding="10,8" Margin="0,0,10,10"/>
                                         <Button Name="UtilRestorePointBtn" Content="Create System Restore Point" Padding="10,8" Margin="0,0,10,10"/>
                                         <Button Name="UtilOpenRestoreBtn" Content="Open System Restore" Padding="10,8" Margin="0,0,10,10"/>
-                                        <Button Name="UtilLongPathBtn" Content="Enable Long Paths (Remove 260 Char Limit)" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilLongPathBtn" Content="Enable Long Paths" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilDisableLongPathBtn" Content="Disable Long Paths" Padding="10,8" Margin="0,0,10,10"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -562,11 +620,13 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                             <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,15">
                                 <StackPanel>
                                     <TextBlock Text="Network Tools" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
-                                    <TextBlock Text="Fix network connectivity issues or enable legacy sharing protocols." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <TextBlock Text="Fix network connectivity issues or enable/disable sharing protocols." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
                                     <WrapPanel>
                                         <Button Name="UtilResetNetBtn" Content="Reset Network Adapters" Padding="10,8" Margin="0,0,10,10"/>
-                                        <Button Name="UtilSMBBtn" Content="Enable SMBv1 Protocol" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilSMBBtn" Content="Enable SMBv1" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilDisableSMBBtn" Content="Disable SMBv1" Padding="10,8" Margin="0,0,10,10"/>
                                         <Button Name="UtilFileSharingBtn" Content="Enable File &amp; Printer Sharing" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilDisableFileSharingBtn" Content="Disable File &amp; Printer Sharing" Padding="10,8" Margin="0,0,10,10"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -642,9 +702,12 @@ $UtilResetWUBtn = $Window.FindName("UtilResetWUBtn")
 $UtilRestorePointBtn = $Window.FindName("UtilRestorePointBtn")
 $UtilOpenRestoreBtn = $Window.FindName("UtilOpenRestoreBtn")
 $UtilLongPathBtn = $Window.FindName("UtilLongPathBtn")
+$UtilDisableLongPathBtn = $Window.FindName("UtilDisableLongPathBtn")
 $UtilResetNetBtn = $Window.FindName("UtilResetNetBtn")
 $UtilSMBBtn = $Window.FindName("UtilSMBBtn")
+$UtilDisableSMBBtn = $Window.FindName("UtilDisableSMBBtn")
 $UtilFileSharingBtn = $Window.FindName("UtilFileSharingBtn")
+$UtilDisableFileSharingBtn = $Window.FindName("UtilDisableFileSharingBtn")
 $UtilDriverBtn = $Window.FindName("UtilDriverBtn")
 $UtilSDIOBtn = $Window.FindName("UtilSDIOBtn")
 $UtilWingetRepairBtn = $Window.FindName("UtilWingetRepairBtn")
@@ -654,26 +717,52 @@ $UtilDiskCleanupBtn = $Window.FindName("UtilDiskCleanupBtn")
 $UtilClearLogsBtn = $Window.FindName("UtilClearLogsBtn")
 $UtilIconCacheBtn = $Window.FindName("UtilIconCacheBtn")
 
-# Privacy UI Map
+# Privacy & Optimize UI Map
 $PrivacyAdminWarning = $Window.FindName("PrivacyAdminWarning")
+$PerfAdminWarning = $Window.FindName("PerfAdminWarning")
+
+# Privacy Checkboxes
 $ChkTelemetry = $Window.FindName("ChkTelemetry")
+$ChkLocation = $Window.FindName("ChkLocation")
 $ChkActivity = $Window.FindName("ChkActivity")
+$ChkAppLaunch = $Window.FindName("ChkAppLaunch")
+$ChkLanguage = $Window.FindName("ChkLanguage")
+$ChkSpeech = $Window.FindName("ChkSpeech")
 $ChkTailoredExp = $Window.FindName("ChkTailoredExp")
 $ChkWER = $Window.FindName("ChkWER")
 $ChkFeedback = $Window.FindName("ChkFeedback")
+$ChkWorkplace = $Window.FindName("ChkWorkplace")
+$ChkOneDrive = $Window.FindName("ChkOneDrive")
 $ChkBingSearch = $Window.FindName("ChkBingSearch")
 $ChkStartAds = $Window.FindName("ChkStartAds")
 $ChkLockScreenAds = $Window.FindName("ChkLockScreenAds")
 $ChkExplorerAds = $Window.FindName("ChkExplorerAds")
 $ChkWelcomeExp = $Window.FindName("ChkWelcomeExp")
 $ChkAdId = $Window.FindName("ChkAdId")
+$ChkBitLocker = $Window.FindName("ChkBitLocker")
 $ChkCopilot = $Window.FindName("ChkCopilot")
 $ChkWidgets = $Window.FindName("ChkWidgets")
+$ChkMaintenance = $Window.FindName("ChkMaintenance")
 $ChkConsumer = $Window.FindName("ChkConsumer")
 $ChkWifiSense = $Window.FindName("ChkWifiSense")
-$RefreshPrivacyBtn = $Window.FindName("RefreshPrivacyBtn")
-$ApplyPrivacyBtn = $Window.FindName("ApplyPrivacyBtn")
-$CreateRestorePointPrivacyCheck = $Window.FindName("CreateRestorePointPrivacyCheck")
+$ChkRemoteAssist = $Window.FindName("ChkRemoteAssist")
+
+# Performance Checkboxes
+$ChkGameMode = $Window.FindName("ChkGameMode")
+$ChkCpuPriority = $Window.FindName("ChkCpuPriority")
+$ChkHwSchMode = $Window.FindName("ChkHwSchMode")
+$ChkFSO = $Window.FindName("ChkFSO")
+$ChkGameDVR = $Window.FindName("ChkGameDVR")
+$ChkMouseAccel = $Window.FindName("ChkMouseAccel")
+$ChkMenuDelay = $Window.FindName("ChkMenuDelay")
+$ChkStartupDelay = $Window.FindName("ChkStartupDelay")
+$ChkBackgroundApps = $Window.FindName("ChkBackgroundApps")
+$ChkNetworkThrottling = $Window.FindName("ChkNetworkThrottling")
+$ChkStorageSense = $Window.FindName("ChkStorageSense")
+
+$RefreshOptimizeBtn = $Window.FindName("RefreshOptimizeBtn")
+$ApplyOptimizeBtn = $Window.FindName("ApplyOptimizeBtn")
+$CreateRestorePointOptimizeCheck = $Window.FindName("CreateRestorePointOptimizeCheck")
 
 $CreateRestorePointUpdateCheck = $Window.FindName("CreateRestorePointUpdateCheck")
 
@@ -685,7 +774,7 @@ if ($isActualAdmin) {
     
     $CreateRestorePointInstallCheck.IsEnabled = $true
     $CreateRestorePointUpdateCheck.IsEnabled = $true
-    $CreateRestorePointPrivacyCheck.IsEnabled = $true
+    $CreateRestorePointOptimizeCheck.IsEnabled = $true
 } else {
     $Window.Title = "WinToolsUI (Standard User)"
     $AdminInstallCheck.IsChecked = $false
@@ -702,9 +791,9 @@ if ($isActualAdmin) {
     $CreateRestorePointUpdateCheck.ToolTip = "Administrator privileges are required to create Restore Points."
     $CreateRestorePointUpdateCheck.Foreground = "#888888"
     
-    $CreateRestorePointPrivacyCheck.IsEnabled = $false
-    $CreateRestorePointPrivacyCheck.ToolTip = "Administrator privileges are required to create Restore Points."
-    $CreateRestorePointPrivacyCheck.Foreground = "#888888"
+    $CreateRestorePointOptimizeCheck.IsEnabled = $false
+    $CreateRestorePointOptimizeCheck.ToolTip = "Administrator privileges are required to create Restore Points."
+    $CreateRestorePointOptimizeCheck.Foreground = "#888888"
     
     # Disable Utilities if not admin
     $UtilAdminWarning.Visibility = 'Visible'
@@ -713,9 +802,12 @@ if ($isActualAdmin) {
     $UtilRestorePointBtn.IsEnabled = $false
     $UtilOpenRestoreBtn.IsEnabled = $false
     $UtilLongPathBtn.IsEnabled = $false
+    $UtilDisableLongPathBtn.IsEnabled = $false
     $UtilResetNetBtn.IsEnabled = $false
     $UtilSMBBtn.IsEnabled = $false
+    $UtilDisableSMBBtn.IsEnabled = $false
     $UtilFileSharingBtn.IsEnabled = $false
+    $UtilDisableFileSharingBtn.IsEnabled = $false
     $UtilDriverBtn.IsEnabled = $false
     $UtilSDIOBtn.IsEnabled = $false
     $UtilWingetRepairBtn.IsEnabled = $false
@@ -725,9 +817,10 @@ if ($isActualAdmin) {
     $UtilClearLogsBtn.IsEnabled = $false
     $UtilIconCacheBtn.IsEnabled = $false
     
-    # Disable Privacy if not admin
+    # Disable Optimize (Privacy/Performance) if not admin
     $PrivacyAdminWarning.Visibility = 'Visible'
-    $ApplyPrivacyBtn.IsEnabled = $false
+    $PerfAdminWarning.Visibility = 'Visible'
+    $ApplyOptimizeBtn.IsEnabled = $false
 }
 
 # --- Apply Winget Missing Status to UI ---
@@ -770,7 +863,6 @@ $StatusText = $Window.FindName("StatusText")
 $NetworkStatusText = $Window.FindName("NetworkStatusText")
 
 # --- Initialize the Observable Queue ---
-# This allows the UI to automatically update when we add/remove items from the queue
 $script:InstallQueue = New-Object System.Collections.ObjectModel.ObservableCollection[object]
 $QueueGrid.ItemsSource = $script:InstallQueue
 
@@ -832,7 +924,6 @@ $bgJobBlock = {
         $headerLine = $raw[$headerIdx]
         
         # 2. Find column start indices using word boundaries (\S+ matches any contiguous word)
-        # This completely solves the "missing column" bug, regardless of Winget's spacing.
         $colIndices = @()
         $headerMatches = [regex]::Matches($headerLine, '\S+')
         foreach ($m in $headerMatches) {
@@ -1217,7 +1308,6 @@ $bgJobBlock = {
                     $Hash.Result = $raw -join "`r`n"
                 }
             }
-            # --- NEW UTILITY COMMANDS ---
             'UtilSystemScan' {
                 $Hash.LogQueue.Enqueue(">>> Running DISM Component Store Cleanup and Repair...")
                 $Hash.LogQueue.Enqueue(">>> (This may take several minutes to complete)")
@@ -1282,6 +1372,17 @@ $bgJobBlock = {
                 }
                 $Hash.Result = "Success"
             }
+            'UtilDisableSMB' {
+                $Hash.LogQueue.Enqueue(">>> Disabling SMBv1 Protocol...")
+                try {
+                    Disable-WindowsOptionalFeature -Online -FeatureName SMB1Protocol -NoRestart -ErrorAction Stop | Out-Null
+                    $Hash.LogQueue.Enqueue("Successfully disabled SMBv1. A system restart may be required.")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.LogQueue.Enqueue("Error disabling SMBv1: $($_.Exception.Message)")
+                    $Hash.Result = "Error: $($_.Exception.Message)"
+                }
+            }
             'UtilFileSharing' {
                 $Hash.LogQueue.Enqueue(">>> Enabling File and Printer Sharing rules...")
                 try {
@@ -1298,6 +1399,19 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue("PowerShell Cmdlet Error: $($_.Exception.Message)")
                     $Hash.LogQueue.Enqueue("Attempting fallback using netsh...")
                     & netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=Yes
+                    $Hash.Result = "Success (Fallback)"
+                }
+            }
+            'UtilDisableFileSharing' {
+                $Hash.LogQueue.Enqueue(">>> Disabling File and Printer Sharing rules...")
+                try {
+                    Disable-NetFirewallRule -DisplayGroup "File and Printer Sharing" -ErrorAction Stop | Out-Null
+                    $Hash.LogQueue.Enqueue("Successfully disabled 'File and Printer Sharing' for all profiles.")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.LogQueue.Enqueue("PowerShell Cmdlet Error: $($_.Exception.Message)")
+                    $Hash.LogQueue.Enqueue("Attempting fallback using netsh...")
+                    & netsh advfirewall firewall set rule group="File and Printer Sharing" new enable=No
                     $Hash.Result = "Success (Fallback)"
                 }
             }
@@ -1386,6 +1500,16 @@ $bgJobBlock = {
                 try {
                     Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 1 -ErrorAction Stop
                     $Hash.LogQueue.Enqueue("Successfully enabled Long Paths in the registry.")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.Result = "Error: $($_.Exception.Message)"
+                }
+            }
+            'UtilDisableLongPath' {
+                $Hash.LogQueue.Enqueue(">>> Disabling Win32 Long Paths...")
+                try {
+                    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name "LongPathsEnabled" -Value 0 -ErrorAction Stop
+                    $Hash.LogQueue.Enqueue("Successfully disabled Long Paths in the registry.")
                     $Hash.Result = "Success"
                 } catch {
                     $Hash.Result = "Error: $($_.Exception.Message)"
@@ -1513,7 +1637,6 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue("    -> Updating indexes, analyzing hardware, and installing drivers.")
                     $Hash.LogQueue.Enqueue("    -> (App will run minimized in the taskbar. This may take several minutes...)")
                     
-                    # Changed from Hidden to Minimized because SDIO overrides strict hidden modes
                     Start-Process -FilePath $SDIOPath -ArgumentList "-autoupdate", "-autoinstall", "-autoclose" -WindowStyle Minimized -Wait
                     
                     $Hash.LogQueue.Enqueue("[+] SDIO Process Finished.")
@@ -1523,10 +1646,10 @@ $bgJobBlock = {
                     $Hash.Result = "Error: SDIO executable missing."
                 }
             }
-            'ApplyPrivacy' {
+            'ApplyOptimizations' {
                 if ($CreateRestore) {
-                    $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before applying privacy settings...")
-                    New-BypassRestorePoint -Desc "WinToolsUI Privacy Settings" | Out-Null
+                    $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before applying optimizations...")
+                    New-BypassRestorePoint -Desc "WinToolsUI Optimizations" | Out-Null
                 }
                 
                 # Helper function for setting registry keys deeply
@@ -1536,8 +1659,9 @@ $bgJobBlock = {
                 }
 
                 $cfg = $Query # Query holds our hashtable of checkbox states
-                $Hash.LogQueue.Enqueue(">>> Applying Privacy and Ad-blocking settings...")
+                $Hash.LogQueue.Enqueue(">>> Applying Privacy, Ads, and Performance settings...")
                 
+                # --- PRIVACY & ADS ---
                 # 1. Telemetry
                 if ($cfg.Telemetry) {
                     $Hash.LogQueue.Enqueue("    -> Disabling Windows Telemetry (DiagTrack)")
@@ -1661,8 +1785,191 @@ $bgJobBlock = {
                 } else {
                     Set-PrivacyRegKey "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" "AutoConnectAllowedOEM" 1
                 }
+                
+                # 16. Location Services
+                if ($cfg.Location) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling System-wide Location Services")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" "DisableLocation" 1
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" "DisableLocation" 0
+                }
+                
+                # 17. App Launch Tracking
+                if ($cfg.AppLaunch) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling App Launch Tracking (Start/Search)")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_TrackProgs" 0
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_TrackProgs" 1
+                }
+                
+                # 18. Language List
+                if ($cfg.Language) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Language List Website Access")
+                    Set-PrivacyRegKey "HKCU:\Control Panel\International\User Profile" "HttpAcceptLanguageOptOut" 1
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Control Panel\International\User Profile" "HttpAcceptLanguageOptOut" 0
+                }
+                
+                # 19. Online Speech Recognition
+                if ($cfg.Speech) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Online Speech Recognition")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Speech_OneCore\Settings\OnlineSpeechPrivacy" "HasAccepted" 0
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Speech_OneCore\Settings\OnlineSpeechPrivacy" "HasAccepted" 1
+                }
+                
+                # 20. Workplace Join Messages
+                if ($cfg.Workplace) {
+                    $Hash.LogQueue.Enqueue("    -> Blocking Workplace Join (Manage Device) Prompts")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WorkplaceJoin" "BlockAADWorkplaceJoin" 1
+                } else {
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WorkplaceJoin" -Name "BlockAADWorkplaceJoin" -ErrorAction SilentlyContinue } catch {}
+                }
+                
+                # 21. OneDrive Auto Backup
+                if ($cfg.OneDrive) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling OneDrive Automatic Folder Backups")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\OneDrive" "KFMBlockOptIn" 1
+                } else {
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\OneDrive" -Name "KFMBlockOptIn" -ErrorAction SilentlyContinue } catch {}
+                }
+                
+                # 22. BitLocker Auto Encryption
+                if ($cfg.BitLocker) {
+                    $Hash.LogQueue.Enqueue("    -> Preventing BitLocker Auto-Encryption")
+                    Set-PrivacyRegKey "HKLM:\SYSTEM\CurrentControlSet\Control\BitLocker" "PreventDeviceEncryption" 1
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SYSTEM\CurrentControlSet\Control\BitLocker" "PreventDeviceEncryption" 0
+                }
+                
+                # 23. Automatic Maintenance
+                if ($cfg.Maintenance) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Automatic System Maintenance")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance" "MaintenanceDisabled" 1
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance" "MaintenanceDisabled" 0
+                }
+                
+                # 24. Remote Assistance
+                if ($cfg.RemoteAssist) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Remote Assistance Connections")
+                    Set-PrivacyRegKey "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" "fAllowToGetHelp" 0
+                } else {
+                    Set-PrivacyRegKey "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" "fAllowToGetHelp" 1
+                }
 
-                $Hash.LogQueue.Enqueue("[+] Privacy settings applied successfully.")
+                # --- PERFORMANCE & GAMING ---
+                # 25. Game Mode
+                if ($cfg.GameMode) {
+                    $Hash.LogQueue.Enqueue("    -> Enabling Windows Game Mode")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 0
+                }
+
+                # 26. CPU Priority & Responsiveness
+                if ($cfg.CpuPriority) {
+                    $Hash.LogQueue.Enqueue("    -> Optimizing CPU/GPU Priority & System Responsiveness for Gaming")
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Priority" 6
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Scheduling Category" "High" "String"
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "GPU Priority" 8
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "SystemResponsiveness" 10
+                } else {
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Priority" 2
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Scheduling Category" "Medium" "String"
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "GPU Priority" 2
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "SystemResponsiveness" 20
+                }
+
+                # 27. Hardware-Accelerated GPU Scheduling (HAGS)
+                if ($cfg.HwSchMode) {
+                    $Hash.LogQueue.Enqueue("    -> Enabling Hardware-Accelerated GPU Scheduling (HAGS)")
+                    Set-PrivacyRegKey "HKLM:\System\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode" 2
+                } else {
+                    Set-PrivacyRegKey "HKLM:\System\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode" 1
+                }
+
+                # 28. Fullscreen Optimizations (Disable)
+                if ($cfg.FSO) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Fullscreen Optimizations")
+                    Set-PrivacyRegKey "HKCU:\System\GameConfigStore" "GameDVR_FSEBehaviorMode" 2
+                } else {
+                    Set-PrivacyRegKey "HKCU:\System\GameConfigStore" "GameDVR_FSEBehaviorMode" 0
+                }
+
+                # 29. Xbox Game DVR & Bar (Disable)
+                if ($cfg.GameDVR) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Xbox Game DVR & Game Bar")
+                    Set-PrivacyRegKey "HKCU:\System\GameConfigStore" "GameDVR_Enabled" 0
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows\CurrentVersion\GameConfigStore" "GameDVR_Enabled" 0
+                    Set-PrivacyRegKey "HKLM:\Software\Policies\Microsoft\Windows\GameDVR" "AllowGameDVR" 0
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\GameBar" "UseNexusForGameBarEnabled" 0
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\GameBar" "ShowStartupPanel" 0
+                } else {
+                    Set-PrivacyRegKey "HKCU:\System\GameConfigStore" "GameDVR_Enabled" 1
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows\CurrentVersion\GameConfigStore" "GameDVR_Enabled" 1
+                    try { Remove-ItemProperty -Path "HKLM:\Software\Policies\Microsoft\Windows\GameDVR" -Name "AllowGameDVR" -ErrorAction SilentlyContinue } catch {}
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\GameBar" "UseNexusForGameBarEnabled" 1
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\GameBar" "ShowStartupPanel" 1
+                }
+
+                # 30. Mouse Acceleration (Disable)
+                if ($cfg.MouseAccel) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Enhance Pointer Precision (Mouse Acceleration)")
+                    Set-PrivacyRegKey "HKCU:\Control Panel\Mouse" "MouseSpeed" "0" "String"
+                    Set-PrivacyRegKey "HKCU:\Control Panel\Mouse" "MouseThreshold1" "0" "String"
+                    Set-PrivacyRegKey "HKCU:\Control Panel\Mouse" "MouseThreshold2" "0" "String"
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Control Panel\Mouse" "MouseSpeed" "1" "String"
+                    Set-PrivacyRegKey "HKCU:\Control Panel\Mouse" "MouseThreshold1" "6" "String"
+                    Set-PrivacyRegKey "HKCU:\Control Panel\Mouse" "MouseThreshold2" "10" "String"
+                }
+
+                # 31. Menu Show Delay
+                if ($cfg.MenuDelay) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Menu Show Delay")
+                    Set-PrivacyRegKey "HKCU:\Control Panel\Desktop" "MenuShowDelay" "0" "String"
+                } else {
+                    Set-PrivacyRegKey "HKCU:\Control Panel\Desktop" "MenuShowDelay" "400" "String"
+                }
+
+                # 32. Startup Delay
+                if ($cfg.StartupDelay) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Startup Delay for Apps")
+                    Set-PrivacyRegKey "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" "StartupDelayInMSec" 0
+                } else {
+                    try { Remove-ItemProperty -Path "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" -Name "StartupDelayInMSec" -ErrorAction SilentlyContinue } catch {}
+                }
+
+                # 33. Background Apps (Disable)
+                if ($cfg.BackgroundApps) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Apps Running in Background")
+                    Set-PrivacyRegKey "HKCU:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsRunInBackground" 2
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsRunInBackground" 2
+                } else {
+                    try { Remove-ItemProperty -Path "HKCU:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsRunInBackground" -ErrorAction SilentlyContinue } catch {}
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsRunInBackground" -ErrorAction SilentlyContinue } catch {}
+                }
+
+                # 34. Network Throttling (Disable)
+                if ($cfg.NetworkThrottling) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Network Throttling for Gaming")
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "NetworkThrottlingIndex" 10
+                } else {
+                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "NetworkThrottlingIndex" 5
+                }
+
+                # 35. Storage Sense (Enable)
+                if ($cfg.StorageSense) {
+                    $Hash.LogQueue.Enqueue("    -> Enabling Storage Sense")
+                    Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" "01" 1
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\StorageSense" "AllowStorageSenseGlobal" 1
+                } else {
+                    Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" "01" 0
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\StorageSense" "AllowStorageSenseGlobal" 0
+                }
+
+                $Hash.LogQueue.Enqueue("[+] Optimization settings applied successfully.")
                 $Hash.Result = "Success"
             }
         }
@@ -1687,7 +1994,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $C
     while ($syncHash.LogQueue.TryDequeue([ref]$dummy)) {}
 
     # Auto-expand the log panel if we are making system changes
-    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilResetNet', 'UtilSMB', 'UtilFileSharing', 'UtilDriverUpdate', 'UtilSDIO', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs', 'ApplyPrivacy')) {
+    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilDisableLongPath', 'UtilResetNet', 'UtilSMB', 'UtilDisableSMB', 'UtilFileSharing', 'UtilDisableFileSharing', 'UtilDriverUpdate', 'UtilSDIO', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs', 'ApplyOptimizations')) {
         $LogExpander.IsExpanded = $true
     }
     
@@ -1953,9 +2260,12 @@ $timer.Add_Tick({
                 'UtilResetWU'    { $StatusText.Text = "Windows Update services reset completed." }
                 'UtilRestorePoint' { $StatusText.Text = "System restore point created successfully." }
                 'UtilLongPath'   { $StatusText.Text = "Long Paths have been enabled successfully." }
+                'UtilDisableLongPath' { $StatusText.Text = "Long Paths have been disabled successfully." }
                 'UtilResetNet'   { $StatusText.Text = "Network adapters reset successfully." }
                 'UtilSMB'        { $StatusText.Text = "SMBv1 protocol has been enabled." }
+                'UtilDisableSMB' { $StatusText.Text = "SMBv1 protocol has been disabled." }
                 'UtilFileSharing'{ $StatusText.Text = "File and Printer Sharing enabled globally." }
+                'UtilDisableFileSharing'{ $StatusText.Text = "File and Printer Sharing disabled globally." }
                 'UtilWingetRepair' { $StatusText.Text = "Winget repositories have been reset." }
                 'UtilStoreRepair'  { $StatusText.Text = "Microsoft Store cache cleared." }
                 'UtilInstallChoco' { $StatusText.Text = "Chocolatey installation completed." }
@@ -1966,64 +2276,110 @@ $timer.Add_Tick({
                     $StatusText.Text = if ($res -match "Reboot") { "Drivers installed! System reboot required." } else { "Driver scan and update process completed." } 
                 }
                 'UtilSDIO'         { $StatusText.Text = "Snappy Driver Installer process completed." }
-                'ApplyPrivacy'     { $StatusText.Text = "Privacy and Ad settings applied successfully." }
+                'ApplyOptimizations' { $StatusText.Text = "Optimization settings applied successfully." }
             }
         }
     }
 })
 
 # --- Privacy Check/Read Function ---
-function Read-PrivacyStates {
+function Read-OptimizeStates {
     # Helper to read registry silently
-    function Get-PrivacyValue($Path, $Name, $ExpectedDisabledValue) {
+    function Get-PrivacyValue($Path, $Name, $ExpectedValue) {
         try {
             $val = (Get-ItemProperty -Path $Path -Name $Name -ErrorAction Stop).$Name
-            return ($val -eq $ExpectedDisabledValue)
+            return ("$val" -eq "$ExpectedValue")
         } catch { return $false }
     }
     
+    # Read Privacy States
     $ChkTelemetry.IsChecked   = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 0
+    $ChkLocation.IsChecked    = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" "DisableLocation" 1
     $ChkActivity.IsChecked    = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" "EnableActivityFeed" 0
+    $ChkAppLaunch.IsChecked   = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_TrackProgs" 0
+    $ChkLanguage.IsChecked    = Get-PrivacyValue "HKCU:\Control Panel\International\User Profile" "HttpAcceptLanguageOptOut" 1
+    $ChkSpeech.IsChecked      = Get-PrivacyValue "HKCU:\Software\Microsoft\Speech_OneCore\Settings\OnlineSpeechPrivacy" "HasAccepted" 0
     $ChkTailoredExp.IsChecked = Get-PrivacyValue "HKCU:\Software\Policies\Microsoft\Windows\CloudContent" "DisableTailoredExperiencesWithDiagnosticData" 1
     $ChkWER.IsChecked         = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Error Reporting" "Disabled" 1
     $ChkFeedback.IsChecked    = Get-PrivacyValue "HKCU:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "DoNotShowFeedbackNotifications" 1
+    $ChkWorkplace.IsChecked   = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WorkplaceJoin" "BlockAADWorkplaceJoin" 1
+    $ChkOneDrive.IsChecked    = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\OneDrive" "KFMBlockOptIn" 1
     $ChkBingSearch.IsChecked  = Get-PrivacyValue "HKCU:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "DisableSearchBoxSuggestions" 1
     $ChkStartAds.IsChecked    = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-338388Enabled" 0
     $ChkLockScreenAds.IsChecked = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-338387Enabled" 0
     $ChkExplorerAds.IsChecked = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowSyncProviderNotifications" 0
     $ChkWelcomeExp.IsChecked  = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager" "SubscribedContent-310093Enabled" 0
     $ChkAdId.IsChecked        = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\AdvertisingInfo" "Enabled" 0
+    $ChkBitLocker.IsChecked   = Get-PrivacyValue "HKLM:\SYSTEM\CurrentControlSet\Control\BitLocker" "PreventDeviceEncryption" 1
     $ChkCopilot.IsChecked     = Get-PrivacyValue "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot" "TurnOffWindowsCopilot" 1
     $ChkWidgets.IsChecked     = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Dsh" "AllowNewsAndInterests" 0
+    $ChkMaintenance.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\Maintenance" "MaintenanceDisabled" 1
     $ChkConsumer.IsChecked    = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent" "DisableWindowsConsumerFeatures" 1
     $ChkWifiSense.IsChecked   = Get-PrivacyValue "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" "AutoConnectAllowedOEM" 0
+    $ChkRemoteAssist.IsChecked= Get-PrivacyValue "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" "fAllowToGetHelp" 0
+    
+    # Read Performance States
+    $ChkGameMode.IsChecked          = Get-PrivacyValue "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1
+    $ChkCpuPriority.IsChecked       = Get-PrivacyValue "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Priority" 6
+    $ChkHwSchMode.IsChecked         = Get-PrivacyValue "HKLM:\System\CurrentControlSet\Control\GraphicsDrivers" "HwSchMode" 2
+    $ChkFSO.IsChecked               = Get-PrivacyValue "HKCU:\System\GameConfigStore" "GameDVR_FSEBehaviorMode" 2
+    $ChkGameDVR.IsChecked           = Get-PrivacyValue "HKCU:\System\GameConfigStore" "GameDVR_Enabled" 0
+    $ChkMouseAccel.IsChecked        = Get-PrivacyValue "HKCU:\Control Panel\Mouse" "MouseSpeed" "0"
+    $ChkMenuDelay.IsChecked         = Get-PrivacyValue "HKCU:\Control Panel\Desktop" "MenuShowDelay" "0"
+    $ChkStartupDelay.IsChecked      = Get-PrivacyValue "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Serialize" "StartupDelayInMSec" 0
+    $ChkBackgroundApps.IsChecked    = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsRunInBackground" 2
+    $ChkNetworkThrottling.IsChecked = Get-PrivacyValue "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "NetworkThrottlingIndex" 10
+    $ChkStorageSense.IsChecked      = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\StorageSense\Parameters\StoragePolicy" "01" 1
 }
 
-$RefreshPrivacyBtn.Add_Click({
-    Read-PrivacyStates
-    $StatusText.Text = "Privacy settings refreshed from Registry."
+$RefreshOptimizeBtn.Add_Click({
+    Read-OptimizeStates
+    $StatusText.Text = "Optimization settings refreshed from Registry."
 })
 
-$ApplyPrivacyBtn.Add_Click({
+$ApplyOptimizeBtn.Add_Click({
     $cfg = @{
+        # Privacy Elements
         Telemetry     = $ChkTelemetry.IsChecked -eq $true
+        Location      = $ChkLocation.IsChecked -eq $true
         Activity      = $ChkActivity.IsChecked -eq $true
+        AppLaunch     = $ChkAppLaunch.IsChecked -eq $true
+        Language      = $ChkLanguage.IsChecked -eq $true
+        Speech        = $ChkSpeech.IsChecked -eq $true
         TailoredExp   = $ChkTailoredExp.IsChecked -eq $true
         WER           = $ChkWER.IsChecked -eq $true
         Feedback      = $ChkFeedback.IsChecked -eq $true
+        Workplace     = $ChkWorkplace.IsChecked -eq $true
+        OneDrive      = $ChkOneDrive.IsChecked -eq $true
         BingSearch    = $ChkBingSearch.IsChecked -eq $true
         StartAds      = $ChkStartAds.IsChecked -eq $true
         LockScreenAds = $ChkLockScreenAds.IsChecked -eq $true
         ExplorerAds   = $ChkExplorerAds.IsChecked -eq $true
         WelcomeExp    = $ChkWelcomeExp.IsChecked -eq $true
         AdId          = $ChkAdId.IsChecked -eq $true
+        BitLocker     = $ChkBitLocker.IsChecked -eq $true
         Copilot       = $ChkCopilot.IsChecked -eq $true
         Widgets       = $ChkWidgets.IsChecked -eq $true
+        Maintenance   = $ChkMaintenance.IsChecked -eq $true
         Consumer      = $ChkConsumer.IsChecked -eq $true
         WifiSense     = $ChkWifiSense.IsChecked -eq $true
+        RemoteAssist  = $ChkRemoteAssist.IsChecked -eq $true
+        
+        # Performance Elements
+        GameMode          = $ChkGameMode.IsChecked -eq $true
+        CpuPriority       = $ChkCpuPriority.IsChecked -eq $true
+        HwSchMode         = $ChkHwSchMode.IsChecked -eq $true
+        FSO               = $ChkFSO.IsChecked -eq $true
+        GameDVR           = $ChkGameDVR.IsChecked -eq $true
+        MouseAccel        = $ChkMouseAccel.IsChecked -eq $true
+        MenuDelay         = $ChkMenuDelay.IsChecked -eq $true
+        StartupDelay      = $ChkStartupDelay.IsChecked -eq $true
+        BackgroundApps    = $ChkBackgroundApps.IsChecked -eq $true
+        NetworkThrottling = $ChkNetworkThrottling.IsChecked -eq $true
+        StorageSense      = $ChkStorageSense.IsChecked -eq $true
     }
-    $createRestore = $CreateRestorePointPrivacyCheck.IsChecked -eq $true
-    Start-WingetJob -Action "ApplyPrivacy" -Query $cfg -Id "" -StatusMsg "Applying privacy settings... Please wait." -CreateRestore $createRestore
+    $createRestore = $CreateRestorePointOptimizeCheck.IsChecked -eq $true
+    Start-WingetJob -Action "ApplyOptimizations" -Query $cfg -Id "" -StatusMsg "Applying optimization settings... Please wait." -CreateRestore $createRestore
 })
 
 # 7. Map Button Clicks
@@ -2050,6 +2406,12 @@ $SearchBtn.Add_Click({
 
 $SearchBox.Add_KeyDown({
     if ($_.Key -eq 'Enter') {
+        # Prevent searching if offline
+        if (-not $script:IsOnline) {
+            [System.Windows.MessageBox]::Show("Search requires an active internet connection.", "Offline Mode", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
+            return
+        }
+        
         $query = $SearchBox.Text
         if (![string]::IsNullOrWhiteSpace($query)) {
             $DiscoverGrid.ItemsSource = $null
@@ -2225,7 +2587,6 @@ $UninstallBtn.Add_Click({
     $highlighted = @($hlList)
     
     # Prioritize Checkboxes if any are checked, otherwise use Highlighted rows
-    # FIX: Wrap the pipeline if/else block in @(...) to prevent PowerShell from unrolling single-item arrays
     $finalSelection = @(if ($checked.Count -gt 0) { $checked } else { $highlighted })
     
     if ($finalSelection.Count -gt 0) { 
@@ -2268,7 +2629,6 @@ $UpdateBtn.Add_Click({
     }
     $highlighted = @($hlList)
     
-    # FIX: Wrap the pipeline if/else block in @(...) to prevent PowerShell from unrolling single-item arrays
     $finalSelection = @(if ($checked.Count -gt 0) { $checked } else { $highlighted })
     
     if ($finalSelection.Count -gt 0) { 
@@ -2387,6 +2747,11 @@ $UtilLongPathBtn.Add_Click({
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilLongPath" -Query "" -Id "" -StatusMsg "Enabling Long Paths... Please wait." }
 })
 
+$UtilDisableLongPathBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will restore the default 260-character path limit (MAX_PATH) in Windows.`n`nContinue?", "Disable Long Paths", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilDisableLongPath" -Query "" -Id "" -StatusMsg "Disabling Long Paths... Please wait." }
+})
+
 $UtilResetNetBtn.Add_Click({
     $msgResult = [System.Windows.MessageBox]::Show("This will flush DNS, release/renew your IP, and completely reset Winsock and TCP/IP configurations.`n`nYou may briefly lose internet connection. Continue?", "Reset Network", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilResetNet" -Query "" -Id "" -StatusMsg "Resetting Network Adapters and configurations..." }
@@ -2397,9 +2762,19 @@ $UtilSMBBtn.Add_Click({
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilSMB" -Query "" -Id "" -StatusMsg "Enabling SMBv1 Protocol..." }
 })
 
+$UtilDisableSMBBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will disable the legacy SMBv1 protocol for better security.`n`nContinue?", "Disable SMBv1", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilDisableSMB" -Query "" -Id "" -StatusMsg "Disabling SMBv1 Protocol..." }
+})
+
 $UtilFileSharingBtn.Add_Click({
     $msgResult = [System.Windows.MessageBox]::Show("This will enable the 'File and Printer Sharing' firewall rules for all network profiles (Public, Private, Domain) and allow inbound/outbound traffic from ANY IP address.`n`nWarning: Expanding this scope on Public networks can be a security risk. Continue?", "Enable File & Printer Sharing", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilFileSharing" -Query "" -Id "" -StatusMsg "Enabling File and Printer Sharing..." }
+})
+
+$UtilDisableFileSharingBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will disable the 'File and Printer Sharing' firewall rules, preventing network discovery and shared folder access.`n`nContinue?", "Disable File & Printer Sharing", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilDisableFileSharing" -Query "" -Id "" -StatusMsg "Disabling File and Printer Sharing..." }
 })
 
 $UtilWingetRepairBtn.Add_Click({
@@ -2535,7 +2910,7 @@ function Set-OfflineMode {
 
 # --- Auto-Load Installed Apps on Startup ---
 $Window.Add_Loaded({
-    Read-PrivacyStates # Read initial privacy states
+    Read-OptimizeStates # Read initial privacy and performance states
     Set-OfflineMode  # Check network and apply UI changes
     
     $loadMsg = if ($script:IsOnline) { "Loading installed packages and checking for updates... This might take a moment." } else { "Loading installed packages locally (Offline Mode)..." }
