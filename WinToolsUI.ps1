@@ -30,6 +30,7 @@ Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Drawing
 
 # --- Pre-flight Check: Ensure Winget is Installed ---
+$script:WingetMissing = $false
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
     $msgResult = [System.Windows.MessageBox]::Show("Windows Package Manager (Winget) was not found on this system.`n`nWould you like to automatically download and install it now?", "Winget Missing", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
     
@@ -67,12 +68,12 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
             [System.Windows.MessageBox]::Show("Winget was installed successfully! Starting WinToolsUI...", "Success", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
         } catch {
             $dlWindow.Close()
-            [System.Windows.MessageBox]::Show("Failed to install Winget. Error: $($_.Exception.Message)`n`nPlease install 'App Installer' manually from the Microsoft Store.", "Install Failed", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
-            exit
+            [System.Windows.MessageBox]::Show("Failed to install Winget. Error: $($_.Exception.Message)`n`nPlease install 'App Installer' manually from the Microsoft Store.`n`nWinToolsUI will launch with Discovery features disabled.", "Install Failed", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Error)
+            $script:WingetMissing = $true
         }
     } else {
-        # User clicked No, so we must exit as the app cannot run without Winget
-        exit
+        # User clicked No, flag winget as missing to disable UI features
+        $script:WingetMissing = $true
     }
 }
 # ----------------------------------------------------
@@ -118,10 +119,15 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                 <Setter Property="Foreground" Value="White"/>
                                 <Setter Property="FontWeight" Value="SemiBold"/>
                             </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="TabBorder" Property="Background" Value="#1A1A1C"/>
+                                <Setter Property="Foreground" Value="#666666"/>
+                            </Trigger>
                             <MultiTrigger>
                                 <MultiTrigger.Conditions>
                                     <Condition Property="IsMouseOver" Value="True"/>
                                     <Condition Property="IsSelected" Value="False"/>
+                                    <Condition Property="IsEnabled" Value="True"/>
                                 </MultiTrigger.Conditions>
                                 <Setter TargetName="TabBorder" Property="Background" Value="{StaticResource ControlBorder}"/>
                             </MultiTrigger>
@@ -150,6 +156,10 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                             <Trigger Property="IsPressed" Value="True">
                                 <Setter Property="Background" Value="{StaticResource AccentColor}"/>
                                 <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Background" Value="#2D2D30"/>
+                                <Setter Property="Foreground" Value="#666666"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -222,7 +232,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         
         <TabControl Name="MainTabs" Grid.Row="0" Margin="0,0,0,10">
             <!-- Discover Tab -->
-            <TabItem Header="Discover / Search">
+            <TabItem Name="DiscoverTab" Header="Discover / Search">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -235,7 +245,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                     <!-- Row 0: Search Area -->
                     <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
                         <TextBox Name="SearchBox" Width="400" Margin="0,0,10,0" Padding="5" VerticalContentAlignment="Center"/>
-                        <Button Name="SearchBtn" Content="Search Winget" Width="120" Padding="5"/>
+                        <Button Name="SearchBtn" Content="Search" Width="120" Padding="5"/>
                     </StackPanel>
                     
                     <!-- Row 1: Search Results Grid -->
@@ -293,12 +303,13 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+                        <TextBox Name="SearchInstalledBox" Width="300" Margin="0,0,10,0" Padding="5" VerticalContentAlignment="Center"/>
                         <Button Name="RefreshInstalledBtn" Content="Load Installed &amp; Check Updates" Padding="5" Width="220" Margin="0,0,10,0"/>
                     </StackPanel>
                     
                     <TabControl Name="InstalledTabs" Grid.Row="1" Margin="0,5,0,0">
                         <TabItem Header="Desktop / External Apps">
-                            <DataGrid Name="InstalledGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended" BorderThickness="0">
+                            <DataGrid Name="InstalledGrid" AutoGenerateColumns="False" IsReadOnly="False" SelectionMode="Extended" BorderThickness="0">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                                         <Style.Triggers>
@@ -309,21 +320,31 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*"/>
-                                    <DataGridTextColumn Header="Current Version" Binding="{Binding Version}" Width="*"/>
-                                    <DataGridTextColumn Header="Available Update" Binding="{Binding Extra}" Width="*"/>
-                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*"/>
+                                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="40" Header="✓">
+                                        <DataGridCheckBoxColumn.ElementStyle>
+                                            <Style TargetType="CheckBox">
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridCheckBoxColumn.ElementStyle>
+                                    </DataGridCheckBoxColumn>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Current Version" Binding="{Binding Version}" Width="*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Available Update" Binding="{Binding Extra}" Width="*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*" IsReadOnly="True"/>
                                 </DataGrid.Columns>
                                 <DataGrid.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Name="InstalledMenuDetails" Header="Show App Details..." />
+                                        <MenuItem Name="InstalledMenuCopyId" Header="Copy App ID" />
+                                        <MenuItem Name="InstalledMenuUninstall" Header="Uninstall" />
                                     </ContextMenu>
                                 </DataGrid.ContextMenu>
                             </DataGrid>
                         </TabItem>
                         <TabItem Header="Windows / Store Apps">
-                            <DataGrid Name="WindowsAppsGrid" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended" BorderThickness="0">
+                            <DataGrid Name="WindowsAppsGrid" AutoGenerateColumns="False" IsReadOnly="False" SelectionMode="Extended" BorderThickness="0">
                                 <DataGrid.RowStyle>
                                     <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
                                         <Style.Triggers>
@@ -334,15 +355,25 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*"/>
-                                    <DataGridTextColumn Header="Current Version" Binding="{Binding Version}" Width="*"/>
-                                    <DataGridTextColumn Header="Available Update" Binding="{Binding Extra}" Width="*"/>
-                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*"/>
+                                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="40" Header="✓">
+                                        <DataGridCheckBoxColumn.ElementStyle>
+                                            <Style TargetType="CheckBox">
+                                                <Setter Property="HorizontalAlignment" Value="Center"/>
+                                                <Setter Property="VerticalAlignment" Value="Center"/>
+                                            </Style>
+                                        </DataGridCheckBoxColumn.ElementStyle>
+                                    </DataGridCheckBoxColumn>
+                                    <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Current Version" Binding="{Binding Version}" Width="*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Available Update" Binding="{Binding Extra}" Width="*" IsReadOnly="True"/>
+                                    <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*" IsReadOnly="True"/>
                                 </DataGrid.Columns>
                                 <DataGrid.ContextMenu>
                                     <ContextMenu>
                                         <MenuItem Name="WindowsAppsMenuDetails" Header="Show App Details..." />
+                                        <MenuItem Name="WindowsAppsMenuCopyId" Header="Copy App ID" />
+                                        <MenuItem Name="WindowsAppsMenuUninstall" Header="Uninstall" />
                                     </ContextMenu>
                                 </DataGrid.ContextMenu>
                             </DataGrid>
@@ -350,6 +381,8 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                     </TabControl>
 
                     <WrapPanel Grid.Row="2" Margin="0,10,0,0" HorizontalAlignment="Right">
+                        <Button Name="SelectAllInstalledBtn" Content="Select All" Padding="8" Width="90" Margin="0,0,10,5"/>
+                        <Button Name="DeselectAllInstalledBtn" Content="Deselect" Padding="8" Width="90" Margin="0,0,10,5"/>
                         <CheckBox Name="CreateRestorePointUpdateCheck" Content="Create Restore Point" IsChecked="False" VerticalAlignment="Center" Margin="0,0,15,5" Foreground="{StaticResource TextForeground}"/>
                         <Button Name="UninstallBtn" Content="Uninstall Selected" Padding="8" Width="140" Foreground="#FF6B6B" FontWeight="Bold" Margin="0,0,10,5"/>
                         <Button Name="UpdateBtn" Content="Update Selected" Padding="8" Width="140" Foreground="#6BA4FF" FontWeight="Bold" Margin="0,0,10,5"/>
@@ -497,6 +530,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                     <WrapPanel>
                                         <Button Name="UtilWingetRepairBtn" Content="Repair Winget Sources" Padding="10,8" Margin="0,0,10,10"/>
                                         <Button Name="UtilStoreRepairBtn" Content="Repair Microsoft Store" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilInstallChocoBtn" Content="Install Chocolatey" Padding="10,8" Margin="0,0,10,10"/>
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
@@ -571,6 +605,9 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
             <StatusBarItem>
                 <TextBlock Name="StatusText" Text="Ready." FontWeight="SemiBold" Foreground="White"/>
             </StatusBarItem>
+            <StatusBarItem HorizontalAlignment="Right" HorizontalContentAlignment="Right">
+                <TextBlock Name="NetworkStatusText" Text="" FontWeight="Bold" Margin="15,0,10,0"/>
+            </StatusBarItem>
         </StatusBar>
     </Grid>
 </Window>
@@ -581,6 +618,8 @@ $reader = (New-Object System.Xml.XmlNodeReader $xaml)
 $Window = [Windows.Markup.XamlReader]::Load($reader)
 
 # Map XAML elements to PowerShell variables
+$MainTabs = $Window.FindName("MainTabs")
+$DiscoverTab = $Window.FindName("DiscoverTab")
 $SearchBox = $Window.FindName("SearchBox")
 $SearchBtn = $Window.FindName("SearchBtn")
 $DiscoverGrid = $Window.FindName("DiscoverGrid")
@@ -610,6 +649,7 @@ $UtilDriverBtn = $Window.FindName("UtilDriverBtn")
 $UtilSDIOBtn = $Window.FindName("UtilSDIOBtn")
 $UtilWingetRepairBtn = $Window.FindName("UtilWingetRepairBtn")
 $UtilStoreRepairBtn = $Window.FindName("UtilStoreRepairBtn")
+$UtilInstallChocoBtn = $Window.FindName("UtilInstallChocoBtn")
 $UtilDiskCleanupBtn = $Window.FindName("UtilDiskCleanupBtn")
 $UtilClearLogsBtn = $Window.FindName("UtilClearLogsBtn")
 $UtilIconCacheBtn = $Window.FindName("UtilIconCacheBtn")
@@ -680,6 +720,7 @@ if ($isActualAdmin) {
     $UtilSDIOBtn.IsEnabled = $false
     $UtilWingetRepairBtn.IsEnabled = $false
     $UtilStoreRepairBtn.IsEnabled = $false
+    $UtilInstallChocoBtn.IsEnabled = $false
     $UtilDiskCleanupBtn.IsEnabled = $false
     $UtilClearLogsBtn.IsEnabled = $false
     $UtilIconCacheBtn.IsEnabled = $false
@@ -689,15 +730,36 @@ if ($isActualAdmin) {
     $ApplyPrivacyBtn.IsEnabled = $false
 }
 
+# --- Apply Winget Missing Status to UI ---
+if ($script:WingetMissing) {
+    # Disable the Discover tab completely
+    $DiscoverTab.IsEnabled = $false
+    $DiscoverTab.Header = "Discover (Winget Required)"
+    $DiscoverTab.ToolTip = "Winget is not installed on this system."
+    
+    # Switch the starting active tab to the 'Installed & Updates' tab
+    $MainTabs.SelectedIndex = 1 
+    
+    # Disable the Winget repair utility button
+    $UtilWingetRepairBtn.IsEnabled = $false
+}
+
 $RefreshInstalledBtn = $Window.FindName("RefreshInstalledBtn")
+$SelectAllInstalledBtn = $Window.FindName("SelectAllInstalledBtn")
+$DeselectAllInstalledBtn = $Window.FindName("DeselectAllInstalledBtn")
 $UninstallBtn = $Window.FindName("UninstallBtn")
 $UpdateBtn = $Window.FindName("UpdateBtn")
 $UpdateAllBtn = $Window.FindName("UpdateAllBtn")
+$SearchInstalledBox = $Window.FindName("SearchInstalledBox")
 $InstalledGrid = $Window.FindName("InstalledGrid")
 $InstalledMenuDetails = $Window.FindName("InstalledMenuDetails")
+$InstalledMenuCopyId = $Window.FindName("InstalledMenuCopyId")
+$InstalledMenuUninstall = $Window.FindName("InstalledMenuUninstall")
 
 $WindowsAppsGrid = $Window.FindName("WindowsAppsGrid")
 $WindowsAppsMenuDetails = $Window.FindName("WindowsAppsMenuDetails")
+$WindowsAppsMenuCopyId = $Window.FindName("WindowsAppsMenuCopyId")
+$WindowsAppsMenuUninstall = $Window.FindName("WindowsAppsMenuUninstall")
 
 $LogExpander = $Window.FindName("LogExpander")
 $LogTextBox = $Window.FindName("LogTextBox")
@@ -705,6 +767,7 @@ $LogTextBox = $Window.FindName("LogTextBox")
 $JobProgress = $Window.FindName("JobProgress")
 $StopJobBtn = $Window.FindName("StopJobBtn")
 $StatusText = $Window.FindName("StatusText")
+$NetworkStatusText = $Window.FindName("NetworkStatusText")
 
 # --- Initialize the Observable Queue ---
 # This allows the UI to automatically update when we add/remove items from the queue
@@ -726,7 +789,7 @@ $script:AllInstalledApps = $null
 
 # 4. Define the Universal Background Job
 $bgJobBlock = {
-    param($Action, $Query, $Id, $Hash, $IsAdmin, $CreateRestore)
+    param($Action, $Query, $Id, $Hash, $IsAdmin, $CreateRestore, $Manager)
     
     # Force PowerShell to read external Winget output using UTF-8 to prevent 'ΓÇª' encoding issues
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -830,81 +893,226 @@ $bgJobBlock = {
                     Extra     = $extra
                     Source    = $source
                     HasUpdate = $hasUpdate
+                    Manager   = "Winget"
+                    IsSelected = $false
                 }
             }
         }
         return $parsed
     }
+    
+    # Parser for Chocolatey output
+    function ConvertFrom-ChocoOutput($raw) {
+        $parsed = @()
+        foreach ($line in $raw) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            # choco list -l -r output: name|version
+            # choco search -r output: name|version|...
+            $parts = $line -split '\|'
+            if ($parts.Count -ge 2) {
+                $parsed += [PSCustomObject]@{
+                    Name      = $parts[0]
+                    Id        = $parts[0]
+                    Version   = $parts[1]
+                    Extra     = ""
+                    Source    = "chocolatey"
+                    HasUpdate = $false
+                    Manager   = "Chocolatey"
+                    IsSelected = $false
+                }
+            }
+        }
+        return $parsed
+    }
+    
+    # Parser for Chocolatey Outdated
+    function ConvertFrom-ChocoOutdated($raw) {
+        # choco outdated -r output: Name|Current Version|Available Version|Pinned
+        $updates = @{}
+        foreach ($line in $raw) {
+            if ([string]::IsNullOrWhiteSpace($line)) { continue }
+            if ($line -notmatch '\|') { continue } # Ignore non-tabular lines (banners/warnings)
+            $parts = $line -split '\|'
+            if ($parts.Count -ge 3) {
+                # Trim whitespace to handle non-semantic or padded version strings safely
+                $updates[$parts[0].Trim()] = $parts[2].Trim()
+            }
+        }
+        return $updates
+    }
 
     try {
         switch ($Action) {
             'Search' {
-                $sysLocale = (Get-Culture).Name                      
+                $combinedResults = @()
+                
+                # 1. Winget Search
+                $sysLocale = (Get-Culture).Name                     
                 $langOnly = (Get-Culture).TwoLetterISOLanguageName   
                 
-                $raw = @()
+                $rawWinget = @()
                 $Hash.LogQueue.Enqueue(">>> Executing: winget search ""$Query""")
                 $wingetArgs = @("search", $Query, "--count", "40", "--accept-source-agreements", "--disable-interactivity")
                 & winget @wingetArgs 2>&1 | ForEach-Object {
                     $line = $_.ToString()
                     $Hash.LogQueue.Enqueue($line)
-                    $raw += $line
+                    $rawWinget += $line
                 }
                 
-                $parsed = ConvertFrom-WingetOutput $raw
+                $parsedWinget = ConvertFrom-WingetOutput $rawWinget
                 
-                $filtered = @()
-                foreach ($item in $parsed) {
-                    # Detect if the ID ends with a common locale suffix (like .zh-CN, .fr, .ja-JP)
+                foreach ($item in $parsedWinget) {
                     $hasLocaleSuffix = $item.Id -match '\.([a-z]{2}-[A-Z]{2}|[a-z]{2})$'
-                    
                     if (-not $hasLocaleSuffix) {
-                        # 1. Keep standard/neutral packages that don't have a locale tag
-                        $filtered += $item
+                        $combinedResults += $item
                     } elseif ($item.Id -match "\.($sysLocale|$langOnly|en-US|en-GB|en)$") {
-                        # 2. Keep packages that match your local OS language or English
-                        $filtered += $item
+                        $combinedResults += $item
                     }
-                    # 3. Everything else (foreign languages) is quietly discarded to keep the UI clean
                 }
                 
-                $Hash.Result = $filtered
+                # 2. Chocolatey Search (if available)
+                if (Get-Command choco -ErrorAction SilentlyContinue) {
+                    $Hash.LogQueue.Enqueue(">>> Executing: choco search $Query")
+                    $rawChoco = @()
+                    & choco search $Query -r 2>&1 | ForEach-Object {
+                        $line = $_.ToString()
+                        $rawChoco += $line
+                        $Hash.LogQueue.Enqueue($line)
+                    }
+                }
+                
+                $Hash.Result = $combinedResults
             }
             'Installed' {
-                $raw = @()
-                $Hash.LogQueue.Enqueue(">>> Executing: winget list")
-                $wingetArgs = @("list", "--accept-source-agreements", "--disable-interactivity")
-                & winget @wingetArgs 2>&1 | ForEach-Object {
-                    $line = $_.ToString()
-                    $Hash.LogQueue.Enqueue($line)
-                    $raw += $line
+                $combinedResults = @()
+                
+                # 1. Fetch Chocolatey Packages (if available)
+                if (Get-Command choco -ErrorAction SilentlyContinue) {
+                    $Hash.LogQueue.Enqueue(">>> Executing: choco list -l")
+                    $rawChoco = @()
+                    & choco list -l -r 2>&1 | ForEach-Object {
+                        $line = $_.ToString()
+                        $rawChoco += $line
+                    }
+                    $parsedChoco = ConvertFrom-ChocoOutput $rawChoco
+                    
+                    $Hash.LogQueue.Enqueue(">>> Checking for outdated packages...")
+                    $rawOutdated = @()
+                    & choco outdated -r 2>&1 | ForEach-Object {
+                        $line = $_.ToString()
+                        $rawOutdated += $line
+                    }
+                    $updates = ConvertFrom-ChocoOutdated $rawOutdated
+                    
+                    # Merge updates
+                    foreach ($p in $parsedChoco) {
+                        if ($updates.ContainsKey($p.Id)) {
+                            $p.HasUpdate = $true
+                            $p.Extra = $updates[$p.Id]
+                        }
+                    }
+                    $combinedResults += $parsedChoco
                 }
-                $Hash.Result = ConvertFrom-WingetOutput $raw
+                
+                # 2. Fetch Winget Packages (or Fallback to Native)
+                if (Get-Command winget -ErrorAction SilentlyContinue) {
+                    $rawWinget = @()
+                    $Hash.LogQueue.Enqueue(">>> Executing: winget list")
+                    $wingetArgs = @("list", "--accept-source-agreements", "--disable-interactivity")
+                    & winget @wingetArgs 2>&1 | ForEach-Object {
+                        $line = $_.ToString()
+                        $Hash.LogQueue.Enqueue($line)
+                        $rawWinget += $line
+                    }
+                    $parsedWinget = ConvertFrom-WingetOutput $rawWinget
+                    
+                    # Add Winget packages (filtering out duplicates that claim to be from chocolatey source to avoid double listing)
+                    foreach ($p in $parsedWinget) {
+                        if ($p.Source -ne 'chocolatey') {
+                            $combinedResults += $p
+                        }
+                    }
+                } else {
+                    $Hash.LogQueue.Enqueue(">>> Winget not found. Loading installed apps natively via Registry & Appx...")
+                    
+                    # Native Fallback 1: Desktop Apps via Registry
+                    $regPaths = @(
+                        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                        "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                        "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                    )
+                    
+                    $nativeApps = @()
+                    foreach ($path in $regPaths) {
+                        Get-ItemProperty $path -ErrorAction SilentlyContinue | Where-Object { -not [string]::IsNullOrWhiteSpace($_.DisplayName) } | ForEach-Object {
+                            $uString = if ($_.QuietUninstallString) { $_.QuietUninstallString } else { $_.UninstallString }
+                            if (-not [string]::IsNullOrWhiteSpace($uString)) {
+                                $nativeApps += [PSCustomObject]@{
+                                    Name      = $_.DisplayName
+                                    Id        = $uString # We store the uninstall command in the ID field to use it later
+                                    Version   = if ($_.DisplayVersion) { $_.DisplayVersion } else { "Unknown" }
+                                    Extra     = ""
+                                    Source    = "Registry (Native)"
+                                    HasUpdate = $false
+                                    Manager   = "Native"
+                                    IsSelected = $false
+                                }
+                            }
+                        }
+                    }
+                    # Deduplicate native registry apps by Name to prevent visual clutter
+                    $combinedResults += @($nativeApps | Group-Object Name | ForEach-Object { $_.Group[0] })
+                    
+                    # Native Fallback 2: Store Apps via AppxPackage
+                    if ($IsAdmin) {
+                        $appxPackages = Get-AppxPackage -AllUsers -ErrorAction SilentlyContinue
+                    } else {
+                        $appxPackages = Get-AppxPackage -ErrorAction SilentlyContinue
+                    }
+                    
+                    $appxPackages | Where-Object { $_.IsFramework -eq $false -and $_.NonRemovable -eq $false } | ForEach-Object {
+                        $combinedResults += [PSCustomObject]@{
+                            Name      = $_.Name
+                            Id        = $_.PackageFullName
+                            Version   = $_.Version
+                            Extra     = ""
+                            Source    = "Appx (Native)"
+                            HasUpdate = $false
+                            Manager   = "NativeAppx"
+                            IsSelected = $false
+                        }
+                    }
+                }
+                
+                $Hash.Result = $combinedResults
             }
             'Install' {
                 if ($CreateRestore) {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before installation...")
                     New-BypassRestorePoint -Desc "WinToolsUI Install" | Out-Null
                 }
-                foreach ($targetId in @($Id)) {
-                    $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget install $targetId")
-                    $wingetArgs = @("install", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
-                    if ($IsAdmin) { $wingetArgs += "--scope"; $wingetArgs += "machine" }
+                foreach ($item in @($Id)) {
+                    # Determine if input is simple string (legacy) or object
+                    if ($item -is [string]) { $targetId = $item; $mgr = $Manager } else { $targetId = $item.Id; $mgr = $item.Manager }
                     
-                    & winget @wingetArgs 2>&1 | ForEach-Object {
-                        $l = $_.ToString().Trim()
-                        # Ignore Winget's 1-character ASCII animation frames
-                        if ($l -in @('\', '|', '/', '-')) { return }
-                        
-                        # Intercept the Percentage for the UI Progress Bar
-                        if ($l -match '(?<pct>\d{1,3})\s*%') {
-                            $Hash.Progress = [int]$matches['pct']
-                            return # Hide this line from the text log to keep it clean
+                    if ($mgr -eq 'Chocolatey') {
+                        $Hash.LogQueue.Enqueue("`r`n>>> Executing: choco install $targetId")
+                        & choco install $targetId -y 2>&1 | ForEach-Object {
+                            $l = $_.ToString().Trim()
+                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
                         }
+                    } else {
+                        $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget install $targetId")
+                        $wingetArgs = @("install", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
+                        if ($IsAdmin) { $wingetArgs += "--scope"; $wingetArgs += "machine" }
                         
-                        # Also filter block progress bars if they appear without percentages
-                        if ($l -match '█') { return }
-                        if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
+                        & winget @wingetArgs 2>&1 | ForEach-Object {
+                            $l = $_.ToString().Trim()
+                            if ($l -in @('\', '|', '/', '-')) { return }
+                            if ($l -match '(?<pct>\d{1,3})\s*%') { $Hash.Progress = [int]$matches['pct']; return }
+                            if ($l -match '█') { return }
+                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
+                        }
                     }
                 }
                 $Hash.Result = "Success"
@@ -914,18 +1122,47 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before uninstallation...")
                     New-BypassRestorePoint -Desc "WinToolsUI Uninstall" | Out-Null
                 }
-                foreach ($targetId in @($Id)) {
-                    $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget uninstall $targetId")
-                    $wingetArgs = @("uninstall", "--id", $targetId, "--exact", "--silent", "--disable-interactivity")
-                    & winget @wingetArgs 2>&1 | ForEach-Object {
-                        $l = $_.ToString().Trim()
-                        if ($l -in @('\', '|', '/', '-')) { return }
-                        if ($l -match '(?<pct>\d{1,3})\s*%') {
-                            $Hash.Progress = [int]$matches['pct']
-                            return
+                foreach ($item in @($Id)) {
+                    if ($item -is [string]) { $targetId = $item; $mgr = $Manager } else { $targetId = $item.Id; $mgr = $item.Manager }
+                    
+                    if ($mgr -eq 'Chocolatey') {
+                        $Hash.LogQueue.Enqueue("`r`n>>> Executing: choco uninstall $targetId")
+                        & choco uninstall $targetId -y 2>&1 | ForEach-Object {
+                            $l = $_.ToString().Trim()
+                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
                         }
-                        if ($l -match '█') { return }
-                        if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
+                    } elseif ($mgr -eq 'Native') {
+                        $Hash.LogQueue.Enqueue("`r`n>>> Executing Native Uninstaller...")
+                        $Hash.LogQueue.Enqueue("Command: $targetId")
+                        try {
+                            # Execute the raw uninstall string fetched from the registry
+                            Start-Process cmd.exe -ArgumentList "/c", "$targetId" -Wait -WindowStyle Hidden -ErrorAction Stop
+                            $Hash.LogQueue.Enqueue("Uninstall triggered successfully. (Note: Some installers may pop up in the background).")
+                        } catch {
+                            $Hash.LogQueue.Enqueue("Error triggering uninstall: $($_.Exception.Message)")
+                        }
+                    } elseif ($mgr -eq 'NativeAppx') {
+                        $Hash.LogQueue.Enqueue("`r`n>>> Removing Appx Package: $targetId")
+                        try {
+                            if ($IsAdmin) {
+                                Remove-AppxPackage -Package $targetId -AllUsers -ErrorAction Stop
+                            } else {
+                                Remove-AppxPackage -Package $targetId -ErrorAction Stop
+                            }
+                            $Hash.LogQueue.Enqueue("Appx Package removed successfully.")
+                        } catch {
+                            $Hash.LogQueue.Enqueue("Error: $($_.Exception.Message)")
+                        }
+                    } else {
+                        $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget uninstall $targetId")
+                        $wingetArgs = @("uninstall", "--id", $targetId, "--exact", "--silent", "--disable-interactivity")
+                        & winget @wingetArgs 2>&1 | ForEach-Object {
+                            $l = $_.ToString().Trim()
+                            if ($l -in @('\', '|', '/', '-')) { return }
+                            if ($l -match '(?<pct>\d{1,3})\s*%') { $Hash.Progress = [int]$matches['pct']; return }
+                            if ($l -match '█') { return }
+                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
+                        }
                     }
                 }
                 $Hash.Result = "Success"
@@ -935,32 +1172,50 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before update...")
                     New-BypassRestorePoint -Desc "WinToolsUI Update" | Out-Null
                 }
-                foreach ($targetId in @($Id)) {
-                    $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget upgrade $targetId")
-                    $wingetArgs = @("upgrade", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
-                    & winget @wingetArgs 2>&1 | ForEach-Object {
-                        $l = $_.ToString().Trim()
-                        if ($l -in @('\', '|', '/', '-')) { return }
-                        if ($l -match '(?<pct>\d{1,3})\s*%') {
-                            $Hash.Progress = [int]$matches['pct']
-                            return
+                foreach ($item in @($Id)) {
+                    if ($item -is [string]) { $targetId = $item; $mgr = $Manager } else { $targetId = $item.Id; $mgr = $item.Manager }
+                    
+                    if ($mgr -eq 'Chocolatey') {
+                        $Hash.LogQueue.Enqueue("`r`n>>> Executing: choco upgrade $targetId")
+                        & choco upgrade $targetId -y 2>&1 | ForEach-Object {
+                            $l = $_.ToString().Trim()
+                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
                         }
-                        if ($l -match '█') { return }
-                        if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
+                    } else {
+                        $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget upgrade $targetId")
+                        $wingetArgs = @("upgrade", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
+                        & winget @wingetArgs 2>&1 | ForEach-Object {
+                            $l = $_.ToString().Trim()
+                            if ($l -in @('\', '|', '/', '-')) { return }
+                            if ($l -match '(?<pct>\d{1,3})\s*%') { $Hash.Progress = [int]$matches['pct']; return }
+                            if ($l -match '█') { return }
+                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
+                        }
                     }
                 }
                 $Hash.Result = "Success"
             }
             'ShowDetails' {
-                $raw = @()
-                $Hash.LogQueue.Enqueue(">>> Executing: winget show $Id")
-                $wingetArgs = @("show", "--id", $Id, "--exact", "--accept-source-agreements", "--disable-interactivity")
-                & winget @wingetArgs 2>&1 | ForEach-Object {
-                    $line = $_.ToString()
-                    $Hash.LogQueue.Enqueue($line)
-                    $raw += $line
+                if ($Manager -eq 'Chocolatey') {
+                    $Hash.LogQueue.Enqueue(">>> Executing: choco info $Id")
+                    $raw = @()
+                    & choco info $Id 2>&1 | ForEach-Object {
+                        $line = $_.ToString()
+                        $raw += $line
+                        $Hash.LogQueue.Enqueue($line)
+                    }
+                    $Hash.Result = $raw -join "`r`n"
+                } else {
+                    $raw = @()
+                    $Hash.LogQueue.Enqueue(">>> Executing: winget show $Id")
+                    $wingetArgs = @("show", "--id", $Id, "--exact", "--accept-source-agreements", "--disable-interactivity")
+                    & winget @wingetArgs 2>&1 | ForEach-Object {
+                        $line = $_.ToString()
+                        $Hash.LogQueue.Enqueue($line)
+                        $raw += $line
+                    }
+                    $Hash.Result = $raw -join "`r`n"
                 }
-                $Hash.Result = $raw -join "`r`n"
             }
             # --- NEW UTILITY COMMANDS ---
             'UtilSystemScan' {
@@ -1052,6 +1307,26 @@ $bgJobBlock = {
                     if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) }
                 }
                 $Hash.Result = "Success"
+            }
+            'UtilInstallChoco' {
+                $Hash.LogQueue.Enqueue(">>> Installing Chocolatey Package Manager...")
+                try {
+                    # Standard Chocolatey Install Script (Official Method)
+                    Set-ExecutionPolicy Bypass -Scope Process -Force
+                    [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+                    $installCmd = "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+                    
+                    Invoke-Expression $installCmd | Out-String -Stream | ForEach-Object {
+                         if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) }
+                    }
+                    
+                    $Hash.LogQueue.Enqueue(">>> Installation command executed.")
+                    $Hash.LogQueue.Enqueue("Note: You may need to restart the application or computer for 'choco' to appear in path.")
+                    $Hash.Result = "Success"
+                } catch {
+                    $Hash.LogQueue.Enqueue("Error installing Chocolatey: $($_.Exception.Message)")
+                    $Hash.Result = "Error: $($_.Exception.Message)"
+                }
             }
             'UtilStoreRepair' {
                 $Hash.LogQueue.Enqueue(">>> Running wsreset.exe to clear Microsoft Store cache...")
@@ -1397,7 +1672,7 @@ $bgJobBlock = {
 }
 
 # 5. Helper Function to safely dispatch jobs to the Runspace
-function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $CreateRestore = $false) {
+function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $CreateRestore = $false, $Manager = "Winget") {
     # Check if a job is already running and warn the user
     if ($script:IsJobRunning) {
         [System.Windows.MessageBox]::Show("A task is currently running in the background.`n`nPlease wait for it to finish or click 'Stop' before starting a new action.", "Task in Progress", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Warning)
@@ -1429,7 +1704,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $C
     $syncHash.Progress = $null
     $syncHash.StatusMsg = $StatusMsg # Store the base message so we can append % to it later
 
-    $script:psInstance = [PowerShell]::Create().AddScript($bgJobBlock).AddArgument($Action).AddArgument($Query).AddArgument($Id).AddArgument($syncHash).AddArgument($IsAdmin).AddArgument($CreateRestore)
+    $script:psInstance = [PowerShell]::Create().AddScript($bgJobBlock).AddArgument($Action).AddArgument($Query).AddArgument($Id).AddArgument($syncHash).AddArgument($IsAdmin).AddArgument($CreateRestore).AddArgument($Manager)
     $script:psInstance.Runspace = $runspace
     $script:asyncResult = $script:psInstance.BeginInvoke()
     $timer.Start()
@@ -1683,6 +1958,7 @@ $timer.Add_Tick({
                 'UtilFileSharing'{ $StatusText.Text = "File and Printer Sharing enabled globally." }
                 'UtilWingetRepair' { $StatusText.Text = "Winget repositories have been reset." }
                 'UtilStoreRepair'  { $StatusText.Text = "Microsoft Store cache cleared." }
+                'UtilInstallChoco' { $StatusText.Text = "Chocolatey installation completed." }
                 'UtilDiskCleanup'  { $StatusText.Text = "Deep disk cleanup completed." }
                 'UtilIconCache'    { $StatusText.Text = "Icon and thumbnail cache rebuilt." }
                 'UtilClearLogs'    { $StatusText.Text = "Event Viewer logs successfully cleared." }
@@ -1768,7 +2044,7 @@ $SearchBtn.Add_Click({
     $query = $SearchBox.Text
     if (![string]::IsNullOrWhiteSpace($query)) {
         $DiscoverGrid.ItemsSource = $null
-        Start-WingetJob -Action "Search" -Query $query -Id "" -StatusMsg "Searching Winget for '$query'..."
+        Start-WingetJob -Action "Search" -Query $query -Id "" -StatusMsg "Searching Winget & Chocolatey for '$query'..."
     }
 })
 
@@ -1777,7 +2053,7 @@ $SearchBox.Add_KeyDown({
         $query = $SearchBox.Text
         if (![string]::IsNullOrWhiteSpace($query)) {
             $DiscoverGrid.ItemsSource = $null
-            Start-WingetJob -Action "Search" -Query $query -Id "" -StatusMsg "Searching Winget for '$query'..."
+            Start-WingetJob -Action "Search" -Query $query -Id "" -StatusMsg "Searching Winget & Chocolatey for '$query'..."
         }
     }
 })
@@ -1862,15 +2138,15 @@ $ImportQueueBtn.Add_Click({
 
 $InstallBtn.Add_Click({
     if ($script:InstallQueue.Count -gt 0) {
-        [string[]]$ids = @($script:InstallQueue | ForEach-Object { $_.Id })
+        $targets = @($script:InstallQueue | Select-Object Id, Manager, Name)
         $msg = ""
         $promptMsg = ""
-        if ($ids.Count -eq 1) { 
+        if ($targets.Count -eq 1) { 
             $msg = "Installing $($script:InstallQueue[0].Name)..." 
             $promptMsg = "Are you sure you want to install $($script:InstallQueue[0].Name)?"
         } else { 
-            $msg = "Installing $($ids.Count) packages... Please wait." 
-            $promptMsg = "Are you sure you want to install $($ids.Count) packages?"
+            $msg = "Installing $($targets.Count) packages... Please wait." 
+            $promptMsg = "Are you sure you want to install $($targets.Count) packages?"
         }
         
         $msgResult = [System.Windows.MessageBox]::Show($promptMsg, "Confirm Install", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
@@ -1878,7 +2154,7 @@ $InstallBtn.Add_Click({
         if ($msgResult -eq 'Yes') {
             $isAdmin = $AdminInstallCheck.IsChecked -eq $true
             $createRestore = $CreateRestorePointInstallCheck.IsChecked -eq $true
-            Start-WingetJob -Action "Install" -Query "" -Id $ids -StatusMsg $msg -IsAdmin $isAdmin -CreateRestore $createRestore
+            Start-WingetJob -Action "Install" -Query "" -Id $targets -StatusMsg $msg -IsAdmin $isAdmin -CreateRestore $createRestore
         }
     } else { 
         [System.Windows.MessageBox]::Show("Please add packages to the install queue before clicking Install.") 
@@ -1886,34 +2162,91 @@ $InstallBtn.Add_Click({
 })
 
 $RefreshInstalledBtn.Add_Click({
+    $SearchInstalledBox.Clear()
     $InstalledGrid.ItemsSource = $null
     $WindowsAppsGrid.ItemsSource = $null
     $script:AllInstalledApps = $null
-    Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg "Loading installed packages and checking for updates... This might take a moment."
+    
+    Set-OfflineMode
+    $loadMsg = if ($script:IsOnline) { "Loading installed packages (Winget & Chocolatey) and checking for updates..." } else { "Loading installed packages locally (Offline Mode)..." }
+    Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg $loadMsg
+})
+
+$SelectAllInstalledBtn.Add_Click({
+    # Determine active grid based on selected tab
+    $activeGrid = if ($InstalledTabs.SelectedIndex -eq 1) { $WindowsAppsGrid } else { $InstalledGrid }
+    if ($activeGrid.ItemsSource) {
+        foreach ($item in $activeGrid.ItemsSource) { $item.IsSelected = $true }
+        $activeGrid.Items.Refresh()
+    }
+})
+
+$DeselectAllInstalledBtn.Add_Click({
+    # Determine active grid
+    $activeGrid = if ($InstalledTabs.SelectedIndex -eq 1) { $WindowsAppsGrid } else { $InstalledGrid }
+    if ($activeGrid.ItemsSource) {
+        foreach ($item in $activeGrid.ItemsSource) { $item.IsSelected = $false }
+        $activeGrid.Items.Refresh()
+    }
+})
+
+$SearchInstalledBox.Add_TextChanged({
+    $filter = $SearchInstalledBox.Text
+    if ($script:AllInstalledApps -ne $null) {
+        $filtered = if ([string]::IsNullOrWhiteSpace($filter)) {
+            $script:AllInstalledApps
+        } else {
+            $script:AllInstalledApps | Where-Object { $_.Name -like "*$filter*" -or $_.Id -like "*$filter*" }
+        }
+        
+        # Split into two lists based on standard Windows Store / Appx / MSIX heuristics
+        $desktopApps = @($filtered | Where-Object { $_.Source -ne 'msstore' -and $_.Id -notmatch '_[a-zA-Z0-9]{13}$' -and $_.Id -notmatch '^MSIX\\' })
+        $windowsApps = @($filtered | Where-Object { $_.Source -eq 'msstore' -or $_.Id -match '_[a-zA-Z0-9]{13}$' -or $_.Id -match '^MSIX\\' })
+        
+        $InstalledGrid.ItemsSource = $desktopApps
+        $WindowsAppsGrid.ItemsSource = $windowsApps
+    }
 })
 
 $UninstallBtn.Add_Click({
-    $selected = @($InstalledGrid.SelectedItems) + @($WindowsAppsGrid.SelectedItems)
-    if ($selected.Count -gt 0) { 
-        [string[]]$ids = @($selected | ForEach-Object { $_.Id })
-        
+    # Combine explicitly checked items + standard selection (if checked is empty)
+    $checked = @()
+    if ($InstalledGrid.ItemsSource) { $checked += @($InstalledGrid.ItemsSource | Where-Object { $_.IsSelected }) }
+    if ($WindowsAppsGrid.ItemsSource) { $checked += @($WindowsAppsGrid.ItemsSource | Where-Object { $_.IsSelected }) }
+    
+    # Use ArrayList to safely collect SelectedItems without += array rebuilding issues
+    $hlList = New-Object System.Collections.ArrayList
+    if ($InstalledGrid.SelectedItems -and $InstalledGrid.SelectedItems.Count -gt 0) {
+        foreach($i in $InstalledGrid.SelectedItems) { [void]$hlList.Add($i) }
+    }
+    if ($WindowsAppsGrid.SelectedItems -and $WindowsAppsGrid.SelectedItems.Count -gt 0) {
+        foreach($i in $WindowsAppsGrid.SelectedItems) { [void]$hlList.Add($i) }
+    }
+    $highlighted = @($hlList)
+    
+    # Prioritize Checkboxes if any are checked, otherwise use Highlighted rows
+    # FIX: Wrap the pipeline if/else block in @(...) to prevent PowerShell from unrolling single-item arrays
+    $finalSelection = @(if ($checked.Count -gt 0) { $checked } else { $highlighted })
+    
+    if ($finalSelection.Count -gt 0) { 
+        $targets = @($finalSelection | Select-Object -Unique Id, Manager, Name)
         $msg = ""
         $promptMsg = ""
-        if ($ids.Count -eq 1) { 
-            $msg = "Uninstalling $($selected[0].Name)..." 
-            $promptMsg = "Are you sure you want to uninstall $($selected[0].Name)?"
+        if ($targets.Count -eq 1) { 
+            $msg = "Uninstalling $($targets[0].Name)..." 
+            $promptMsg = "Are you sure you want to uninstall $($targets[0].Name)?"
         } else { 
-            $msg = "Uninstalling $($ids.Count) packages... Please wait." 
-            $promptMsg = "Are you sure you want to uninstall $($ids.Count) packages?"
+            $msg = "Uninstalling $($targets.Count) packages... Please wait." 
+            $promptMsg = "Are you sure you want to uninstall $($targets.Count) packages?"
         }
 
         $msgResult = [System.Windows.MessageBox]::Show($promptMsg, "Confirm Uninstall", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
         
         if ($msgResult -eq 'Yes') {
             # Save the selected app objects to the background syncHash so the scanner knows what to look for
-            $syncHash.TargetApps = $selected
+            $syncHash.TargetApps = $finalSelection
             $createRestore = $CreateRestorePointUpdateCheck.IsChecked -eq $true
-            Start-WingetJob -Action "Uninstall" -Query "" -Id $ids -StatusMsg $msg -CreateRestore $createRestore
+            Start-WingetJob -Action "Uninstall" -Query "" -Id $targets -StatusMsg $msg -CreateRestore $createRestore
         }
     } else { 
         [System.Windows.MessageBox]::Show("Please select at least one installed package to uninstall.") 
@@ -1921,24 +2254,40 @@ $UninstallBtn.Add_Click({
 })
 
 $UpdateBtn.Add_Click({
-    $selected = @($InstalledGrid.SelectedItems) + @($WindowsAppsGrid.SelectedItems)
-    if ($selected.Count -gt 0) { 
-        [string[]]$ids = @($selected | ForEach-Object { $_.Id })
+    $checked = @()
+    if ($InstalledGrid.ItemsSource) { $checked += @($InstalledGrid.ItemsSource | Where-Object { $_.IsSelected }) }
+    if ($WindowsAppsGrid.ItemsSource) { $checked += @($WindowsAppsGrid.ItemsSource | Where-Object { $_.IsSelected }) }
+    
+    # Use ArrayList to safely collect SelectedItems without += array rebuilding issues
+    $hlList = New-Object System.Collections.ArrayList
+    if ($InstalledGrid.SelectedItems -and $InstalledGrid.SelectedItems.Count -gt 0) {
+        foreach($i in $InstalledGrid.SelectedItems) { [void]$hlList.Add($i) }
+    }
+    if ($WindowsAppsGrid.SelectedItems -and $WindowsAppsGrid.SelectedItems.Count -gt 0) {
+        foreach($i in $WindowsAppsGrid.SelectedItems) { [void]$hlList.Add($i) }
+    }
+    $highlighted = @($hlList)
+    
+    # FIX: Wrap the pipeline if/else block in @(...) to prevent PowerShell from unrolling single-item arrays
+    $finalSelection = @(if ($checked.Count -gt 0) { $checked } else { $highlighted })
+    
+    if ($finalSelection.Count -gt 0) { 
+        $targets = @($finalSelection | Select-Object -Unique Id, Manager, Name)
         $msg = ""
         $promptMsg = ""
-        if ($ids.Count -eq 1) { 
-            $msg = "Updating $($selected[0].Name)..." 
-            $promptMsg = "Are you sure you want to update $($selected[0].Name)?"
+        if ($targets.Count -eq 1) { 
+            $msg = "Updating $($targets[0].Name)..." 
+            $promptMsg = "Are you sure you want to update $($targets[0].Name)?"
         } else { 
-            $msg = "Updating $($ids.Count) packages... Please wait." 
-            $promptMsg = "Are you sure you want to update $($ids.Count) packages?"
+            $msg = "Updating $($targets.Count) packages... Please wait." 
+            $promptMsg = "Are you sure you want to update $($targets.Count) packages?"
         }
         
         $msgResult = [System.Windows.MessageBox]::Show($promptMsg, "Confirm Update", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
         
         if ($msgResult -eq 'Yes') {
             $createRestore = $CreateRestorePointUpdateCheck.IsChecked -eq $true
-            Start-WingetJob -Action "Update" -Query "" -Id $ids -StatusMsg $msg -CreateRestore $createRestore
+            Start-WingetJob -Action "Update" -Query "" -Id $targets -StatusMsg $msg -CreateRestore $createRestore
         }
     } else { 
         [System.Windows.MessageBox]::Show("Please select at least one package to update.") 
@@ -1951,17 +2300,17 @@ $UpdateAllBtn.Add_Click({
         return
     }
     # Filter the overall items source for packages that have an available update
-    [string[]]$ids = @($script:AllInstalledApps | Where-Object { $_.HasUpdate -eq $true } | ForEach-Object { $_.Id })
+    $targets = @($script:AllInstalledApps | Where-Object { $_.HasUpdate -eq $true } | Select-Object Id, Manager, Name)
     
-    if ($ids.Count -gt 0) {
-        $msg = if ($ids.Count -eq 1) { "Updating 1 package..." } else { "Updating all $($ids.Count) available updates... Please wait." }
-        $promptMsg = if ($ids.Count -eq 1) { "Are you sure you want to update 1 package?" } else { "Are you sure you want to update all $($ids.Count) available packages?" }
+    if ($targets.Count -gt 0) {
+        $msg = if ($targets.Count -eq 1) { "Updating 1 package..." } else { "Updating all $($targets.Count) available updates... Please wait." }
+        $promptMsg = if ($targets.Count -eq 1) { "Are you sure you want to update 1 package?" } else { "Are you sure you want to update all $($targets.Count) available packages?" }
         
         $msgResult = [System.Windows.MessageBox]::Show($promptMsg, "Confirm Update All", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
         
         if ($msgResult -eq 'Yes') {
             $createRestore = $CreateRestorePointUpdateCheck.IsChecked -eq $true
-            Start-WingetJob -Action "Update" -Query "" -Id $ids -StatusMsg $msg -CreateRestore $createRestore
+            Start-WingetJob -Action "Update" -Query "" -Id $targets -StatusMsg $msg -CreateRestore $createRestore
         }
     } else {
         [System.Windows.MessageBox]::Show("No available updates found.")
@@ -1973,13 +2322,41 @@ $showDetailsAction = {
     param($GridControl)
     $sel = $GridControl.SelectedItem
     if ($sel -ne $null) {
-        Start-WingetJob -Action "ShowDetails" -Query "" -Id $sel.Id -StatusMsg "Loading details for $($sel.Name)..."
+        $mgr = if ($sel.Manager) { $sel.Manager } else { "Winget" }
+        Start-WingetJob -Action "ShowDetails" -Query "" -Id $sel.Id -StatusMsg "Loading details for $($sel.Name)..." -Manager $mgr
     }
 }
 $DiscoverMenuDetails.Add_Click({ &$showDetailsAction $DiscoverGrid })
 $QueueMenuDetails.Add_Click({ &$showDetailsAction $QueueGrid })
 $InstalledMenuDetails.Add_Click({ &$showDetailsAction $InstalledGrid })
 $WindowsAppsMenuDetails.Add_Click({ &$showDetailsAction $WindowsAppsGrid })
+
+$copyIdAction = {
+    param($GridControl)
+    $sel = $GridControl.SelectedItem
+    if ($sel -ne $null) {
+        Set-Clipboard -Value $sel.Id
+        $StatusText.Text = "Copied ID: $($sel.Id)"
+    }
+}
+$InstalledMenuCopyId.Add_Click({ &$copyIdAction $InstalledGrid })
+$WindowsAppsMenuCopyId.Add_Click({ &$copyIdAction $WindowsAppsGrid })
+
+$uninstallContextAction = {
+    param($GridControl)
+    $sel = $GridControl.SelectedItem
+    if ($sel -ne $null) {
+        $targets = @($sel | Select-Object Id, Manager, Name)
+        $msgResult = [System.Windows.MessageBox]::Show("Are you sure you want to uninstall $($sel.Name)?", "Confirm Uninstall", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
+        if ($msgResult -eq 'Yes') {
+            $syncHash.TargetApps = @($sel)
+            $createRestore = $CreateRestorePointUpdateCheck.IsChecked -eq $true
+            Start-WingetJob -Action "Uninstall" -Query "" -Id $targets -StatusMsg "Uninstalling $($sel.Name)..." -CreateRestore $createRestore
+        }
+    }
+}
+$InstalledMenuUninstall.Add_Click({ &$uninstallContextAction $InstalledGrid })
+$WindowsAppsMenuUninstall.Add_Click({ &$uninstallContextAction $WindowsAppsGrid })
 
 # --- Utility Button Event Handlers ---
 $UtilSysScanBtn.Add_Click({
@@ -2035,6 +2412,11 @@ $UtilStoreRepairBtn.Add_Click({
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilStoreRepair" -Query "" -Id "" -StatusMsg "Clearing Microsoft Store Cache..." }
 })
 
+$UtilInstallChocoBtn.Add_Click({
+    $msgResult = [System.Windows.MessageBox]::Show("This will download and install the Chocolatey Package Manager.`n`nContinue?", "Install Chocolatey", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
+    if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilInstallChoco" -Query "" -Id "" -StatusMsg "Installing Chocolatey..." -IsAdmin $true }
+})
+
 $UtilDiskCleanupBtn.Add_Click({
     $msgResult = [System.Windows.MessageBox]::Show("This will permanently empty the Recycle Bin and delete temporary files in both your User Temp and Windows Temp folders.`n`nContinue?", "Deep Disk Cleanup", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Warning)
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilDiskCleanup" -Query "" -Id "" -StatusMsg "Cleaning up disk space..." }
@@ -2060,10 +2442,104 @@ $UtilSDIOBtn.Add_Click({
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilSDIO" -Query "" -Id "" -StatusMsg "Initializing Snappy Driver Installer... Please wait." }
 })
 
+# --- Network Connection Check & Offline Restrictions ---
+function Test-InternetConnection {
+    try {
+        # Check internet quickly against a highly available Microsoft ping endpoint
+        $req = [System.Net.WebRequest]::Create("http://www.msftconnecttest.com/connecttest.txt")
+        $req.Timeout = 2500
+        $res = $req.GetResponse()
+        $res.Close()
+        return $true
+    } catch {
+        return $false
+    }
+}
+
+function Set-OfflineMode {
+    $script:IsOnline = Test-InternetConnection
+    if ($script:IsOnline) {
+        $NetworkStatusText.Text = "Online"
+        $NetworkStatusText.Foreground = "#73D96B"
+        $NetworkStatusText.ToolTip = "Connected to the internet."
+        
+        # Re-enable UI elements if it was previously offline
+        if (-not $script:WingetMissing) {
+            $DiscoverTab.Header = "Discover / Search"
+            $UtilWingetRepairBtn.IsEnabled = $true -and $isActualAdmin
+        }
+        $SearchBtn.Content = "Search"
+        $SearchBtn.IsEnabled = $true
+        
+        $InstallBtn.Content = "Install Queued Packages"
+        $InstallBtn.IsEnabled = $true
+        $InstallBtn.Foreground = "#73D96B"
+        
+        $UpdateBtn.Content = "Update Selected"
+        $UpdateBtn.IsEnabled = $true
+        $UpdateBtn.Foreground = "#6BA4FF"
+        
+        $UpdateAllBtn.Content = "Update All Apps"
+        $UpdateAllBtn.IsEnabled = $true
+        $UpdateAllBtn.Foreground = "#73D96B"
+        
+        $RefreshInstalledBtn.Content = "Load Installed & Check Updates"
+        
+        $UtilInstallChocoBtn.Content = "Install Chocolatey"
+        $UtilInstallChocoBtn.IsEnabled = $true -and $isActualAdmin
+        
+        $UtilDriverBtn.Content = "Official Microsoft Drivers"
+        $UtilDriverBtn.IsEnabled = $true -and $isActualAdmin
+        
+        $UtilSDIOBtn.Content = "Snappy Driver Installer (SDIO)"
+        $UtilSDIOBtn.IsEnabled = $true -and $isActualAdmin
+        
+        $UtilWingetRepairBtn.Content = "Repair Winget Sources"
+    } else {
+        $NetworkStatusText.Text = "Offline Mode"
+        $NetworkStatusText.Foreground = "#FF6B6B"
+        $NetworkStatusText.ToolTip = "No internet connection detected. Online features are disabled."
+        
+        # Disable Online Features and Append "(Offline)"
+        $DiscoverTab.Header = "Discover (Offline)"
+        $SearchBtn.Content = "Search (Offline)"
+        $SearchBtn.IsEnabled = $false
+        
+        $InstallBtn.Content = "Install Queued (Offline)"
+        $InstallBtn.IsEnabled = $false
+        $InstallBtn.Foreground = "#888888"
+        
+        $UpdateBtn.Content = "Update Selected (Offline)"
+        $UpdateBtn.IsEnabled = $false
+        $UpdateBtn.Foreground = "#888888"
+        
+        $UpdateAllBtn.Content = "Update All (Offline)"
+        $UpdateAllBtn.IsEnabled = $false
+        $UpdateAllBtn.Foreground = "#888888"
+        
+        $RefreshInstalledBtn.Content = "Load Installed (Offline)"
+        
+        $UtilInstallChocoBtn.Content = "Install Chocolatey (Offline)"
+        $UtilInstallChocoBtn.IsEnabled = $false
+        
+        $UtilDriverBtn.Content = "Official MS Drivers (Offline)"
+        $UtilDriverBtn.IsEnabled = $false
+        
+        $UtilSDIOBtn.Content = "Snappy Driver (Offline)"
+        $UtilSDIOBtn.IsEnabled = $false
+        
+        $UtilWingetRepairBtn.Content = "Repair Winget Sources (Offline)"
+        $UtilWingetRepairBtn.IsEnabled = $false
+    }
+}
+
 # --- Auto-Load Installed Apps on Startup ---
 $Window.Add_Loaded({
     Read-PrivacyStates # Read initial privacy states
-    Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg "Loading installed packages and checking for updates... This might take a moment."
+    Set-OfflineMode  # Check network and apply UI changes
+    
+    $loadMsg = if ($script:IsOnline) { "Loading installed packages and checking for updates... This might take a moment." } else { "Loading installed packages locally (Offline Mode)..." }
+    Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg $loadMsg
 })
 
 # 6. Show the Window and clean up when closed
