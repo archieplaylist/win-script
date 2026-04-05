@@ -391,7 +391,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                 </Grid>
             </TabItem>
             
-            <!-- NEW: Optimize Tab (Combines Privacy & Performance) -->
+            <!-- Optimize Tab (Combines Privacy, Performance, Customization) -->
             <TabItem Header="Optimize">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
@@ -400,6 +400,69 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                     </Grid.RowDefinitions>
                     
                     <TabControl Name="OptimizeSubTabs" Grid.Row="0" Margin="0,0,0,10" BorderThickness="0" Background="Transparent">
+                        <!-- Customization & Theme Sub-Tab -->
+                        <TabItem Header="Customization">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                <StackPanel Margin="5,10,5,15">
+                                    <TextBlock Text="Theme &amp; Customization" FontWeight="Bold" FontSize="18" Foreground="{StaticResource AccentColor}" Margin="0,0,0,5"/>
+                                    <TextBlock Text="Personalize Windows appearance and theming (System &amp; App level)." Foreground="#AAAAAA" Margin="0,0,0,10"/>
+                                    
+                                    <!-- Dark Mode Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Dark Mode &amp; Theme" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkDarkSystem" Content="Enable Dark Mode for Windows (Taskbar, Start Menu)" ToolTip="Forces the Windows OS UI elements to use dark theme." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkDarkApps" Content="Enable Dark Mode for Default Apps" ToolTip="Forces supported applications and Explorer to use dark theme." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Visual Effects Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Visual Effects &amp; Colors" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkDisableTransparency" Content="Disable Transparency Effects" ToolTip="Disables acrylic/blur effects across Windows. This can improve UI performance." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkTaskbarAccent" Content="Show Accent Color on Start Menu, Taskbar, and Action Center" ToolTip="Applies your current accent color to the Start menu and Taskbar backgrounds." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkTitlebarAccent" Content="Show Accent Color on Title Bars and Window Borders" ToolTip="Applies your current accent color to application window title bars and borders." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- Taskbar Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Taskbar Preferences" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkTaskbarLeft" Content="Align Taskbar to the Left (Windows 11)" ToolTip="Moves the Windows 11 Start Menu and taskbar icons to the left side." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkHideSearch" Content="Hide Search on Taskbar" ToolTip="Removes the Search box or icon from the taskbar." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkHideTaskView" Content="Hide Task View Button" ToolTip="Removes the Task View (virtual desktops) button from the taskbar." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkHideChat" Content="Hide Chat Button (Windows 11)" ToolTip="Removes the Microsoft Teams Chat button from the taskbar." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- Start Menu Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Start Menu Preferences" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkStartMorePins" Content="Show More Pins (Windows 11)" ToolTip="Changes the Start Menu layout to show more pinned apps and fewer recommendations." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkStartHideRecentApps" Content="Hide Recently Added Apps" ToolTip="Removes the 'Recently added' list from the Start Menu." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkStartHideMostUsed" Content="Hide Most Used Apps" ToolTip="Removes the 'Most used' list from the Start Menu." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkStartHideRecentDocs" Content="Hide Recommended/Recent Files" ToolTip="Hides recently opened items in the Start Menu, Jump Lists, and File Explorer." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- File Explorer Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="File Explorer Preferences" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkExpHidden" Content="Show Hidden Files, Folders, and Drives" ToolTip="Displays files and folders that are marked as hidden by the system." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkExpExt" Content="Show File Extensions for Known File Types" ToolTip="Displays the file extensions (like .txt, .exe) at the end of file names." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkExpThisPC" Content="Open File Explorer to 'This PC'" ToolTip="Changes the default opening folder of File Explorer from 'Home' or 'Quick Access' to 'This PC'." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkExpCompact" Content="Enable Compact View" ToolTip="Decreases space between items in File Explorer to show more files at once." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkExpClassicMenu" Content="Use Classic Context Menu (Windows 11)" ToolTip="Restores the classic Windows 10 full right-click menu in File Explorer (Requires Explorer restart)." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </ScrollViewer>
+                        </TabItem>
+
                         <!-- Privacy & Ads Sub-Tab -->
                         <TabItem Header="Privacy &amp; Ads">
                             <ScrollViewer VerticalScrollBarVisibility="Auto">
@@ -421,6 +484,46 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                             <CheckBox Name="ChkTailoredExp" Content="Disable Tailored Experiences (Diagnostic data-based ads)" ToolTip="Stops Microsoft from using your diagnostic data to offer tailored tips, ads, and recommendations." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
                                             <CheckBox Name="ChkWER" Content="Disable Windows Error Reporting (Prevent crash dump uploads)" ToolTip="Stops Windows from automatically uploading crash dumps and error logs to Microsoft." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
                                             <CheckBox Name="ChkFeedback" Content="Disable Feedback Prompts (Stop Microsoft surveys)" ToolTip="Disables those annoying 'How likely are you to recommend Windows?' popup surveys." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- O&O App Privacy Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="App Permissions &amp; Hardware Access" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkAppCamera" Content="Deny Apps Access to Camera" ToolTip="Prevents Windows apps from using your camera." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppMic" Content="Deny Apps Access to Microphone" ToolTip="Prevents Windows apps from using your microphone." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppAccountInfo" Content="Deny Apps Access to Account Info" ToolTip="Prevents apps from accessing your account name, picture, and other info." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppContacts" Content="Deny Apps Access to Contacts" ToolTip="Prevents Windows apps from reading your contacts list." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppCalendar" Content="Deny Apps Access to Calendar" ToolTip="Prevents Windows apps from reading your calendar events." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppEmail" Content="Deny Apps Access to Email" ToolTip="Prevents Windows apps from accessing and reading your emails." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppCallHistory" Content="Deny Apps Access to Call History" ToolTip="Prevents Windows apps from accessing your phone call history." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppTasks" Content="Deny Apps Access to Tasks" ToolTip="Prevents Windows apps from accessing your task lists." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAppMessages" Content="Deny Apps Access to Messages" ToolTip="Prevents Windows apps from reading or sending SMS/MMS messages." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- O&O Security & Updates Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Security Telemetry &amp; Updates" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkDefenderTelemetry" Content="Disable Windows Defender Telemetry (MAPS/Spynet)" ToolTip="Stops Defender from sending telemetry and sample files to Microsoft." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkSmartScreen" Content="Disable SmartScreen Filter" ToolTip="Disables the SmartScreen filter which sends visited URLs and downloaded file hashes to Microsoft." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkP2PUpdate" Content="Disable Windows Update Peer-to-Peer (Delivery Optimization)" ToolTip="Stops your PC from uploading Windows Updates to other PCs on the internet." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkCortana" Content="Disable Cortana (Legacy)" ToolTip="Completely disables the Cortana assistant." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkCEIP" Content="Disable Customer Experience Improvement Program (CEIP)" ToolTip="Stops Windows and installed programs from participating in the CEIP data collection." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkHandwriting" Content="Disable Typing and Inking Telemetry" ToolTip="Stops Microsoft from collecting your handwriting, typing, and dictation samples." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkAutoDriverUpdate" Content="Disable Automatic Driver Updates via Windows Update" ToolTip="Prevents Windows Update from automatically overwriting your hardware drivers." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                        </StackPanel>
+                                    </Border>
+                                    
+                                    <!-- O&O Edge Privacy Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Microsoft Edge Privacy (O&amp;O)" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <CheckBox Name="ChkEdgeTelemetry" Content="Disable Edge Telemetry &amp; Site Tracking" ToolTip="Stops MS Edge from sending browsing data and usage metrics to Microsoft." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkEdgeCopilot" Content="Disable Edge Copilot / Discover Sidebar" ToolTip="Removes the Bing Copilot 'B' icon and sidebar from Microsoft Edge." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
+                                            <CheckBox Name="ChkEdgeSearchAds" Content="Disable Edge Search Suggestions" ToolTip="Prevents your keystrokes in the address bar from being sent to the search engine for suggestions." Margin="0,0,0,8" Foreground="{StaticResource TextForeground}"/>
                                         </StackPanel>
                                     </Border>
                                     
@@ -523,7 +626,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                 </Grid>
             </TabItem>
 
-            <!-- NEW: Utilities Tab -->
+            <!-- Utilities Tab -->
             <TabItem Header="Utilities">
                 <TabItem.Resources>
                     <!-- Make all utility buttons pop more by defining a custom ControlTemplate for them -->
@@ -721,6 +824,30 @@ $UtilIconCacheBtn = $Window.FindName("UtilIconCacheBtn")
 $PrivacyAdminWarning = $Window.FindName("PrivacyAdminWarning")
 $PerfAdminWarning = $Window.FindName("PerfAdminWarning")
 
+# Customization Checkboxes
+$ChkDarkSystem = $Window.FindName("ChkDarkSystem")
+$ChkDarkApps = $Window.FindName("ChkDarkApps")
+$ChkDisableTransparency = $Window.FindName("ChkDisableTransparency")
+$ChkTaskbarAccent = $Window.FindName("ChkTaskbarAccent")
+$ChkTitlebarAccent = $Window.FindName("ChkTitlebarAccent")
+$ChkTaskbarLeft = $Window.FindName("ChkTaskbarLeft")
+$ChkHideSearch = $Window.FindName("ChkHideSearch")
+$ChkHideTaskView = $Window.FindName("ChkHideTaskView")
+$ChkHideChat = $Window.FindName("ChkHideChat")
+
+# Start Menu Checkboxes
+$ChkStartMorePins = $Window.FindName("ChkStartMorePins")
+$ChkStartHideRecentApps = $Window.FindName("ChkStartHideRecentApps")
+$ChkStartHideMostUsed = $Window.FindName("ChkStartHideMostUsed")
+$ChkStartHideRecentDocs = $Window.FindName("ChkStartHideRecentDocs")
+
+# File Explorer Checkboxes
+$ChkExpHidden = $Window.FindName("ChkExpHidden")
+$ChkExpExt = $Window.FindName("ChkExpExt")
+$ChkExpThisPC = $Window.FindName("ChkExpThisPC")
+$ChkExpCompact = $Window.FindName("ChkExpCompact")
+$ChkExpClassicMenu = $Window.FindName("ChkExpClassicMenu")
+
 # Privacy Checkboxes
 $ChkTelemetry = $Window.FindName("ChkTelemetry")
 $ChkLocation = $Window.FindName("ChkLocation")
@@ -746,6 +873,29 @@ $ChkMaintenance = $Window.FindName("ChkMaintenance")
 $ChkConsumer = $Window.FindName("ChkConsumer")
 $ChkWifiSense = $Window.FindName("ChkWifiSense")
 $ChkRemoteAssist = $Window.FindName("ChkRemoteAssist")
+
+# O&O Privacy Checkboxes
+$ChkAppCamera = $Window.FindName("ChkAppCamera")
+$ChkAppMic = $Window.FindName("ChkAppMic")
+$ChkAppAccountInfo = $Window.FindName("ChkAppAccountInfo")
+$ChkAppContacts = $Window.FindName("ChkAppContacts")
+$ChkAppCalendar = $Window.FindName("ChkAppCalendar")
+$ChkAppEmail = $Window.FindName("ChkAppEmail")
+$ChkAppCallHistory = $Window.FindName("ChkAppCallHistory")
+$ChkAppTasks = $Window.FindName("ChkAppTasks")
+$ChkAppMessages = $Window.FindName("ChkAppMessages")
+
+$ChkDefenderTelemetry = $Window.FindName("ChkDefenderTelemetry")
+$ChkSmartScreen = $Window.FindName("ChkSmartScreen")
+$ChkP2PUpdate = $Window.FindName("ChkP2PUpdate")
+$ChkCortana = $Window.FindName("ChkCortana")
+$ChkCEIP = $Window.FindName("ChkCEIP")
+$ChkHandwriting = $Window.FindName("ChkHandwriting")
+$ChkAutoDriverUpdate = $Window.FindName("ChkAutoDriverUpdate")
+
+$ChkEdgeTelemetry = $Window.FindName("ChkEdgeTelemetry")
+$ChkEdgeCopilot = $Window.FindName("ChkEdgeCopilot")
+$ChkEdgeSearchAds = $Window.FindName("ChkEdgeSearchAds")
 
 # Performance Checkboxes
 $ChkGameMode = $Window.FindName("ChkGameMode")
@@ -1071,7 +1221,7 @@ $bgJobBlock = {
                         $Hash.LogQueue.Enqueue($line)
                     }
                     
-                    # FIX: Parse the raw output and add it to the combined results
+                    # Parse the raw output and add it to the combined results
                     $parsedChoco = ConvertFrom-ChocoOutput $rawChoco
                     $combinedResults += $parsedChoco
                 }
@@ -1663,9 +1813,78 @@ $bgJobBlock = {
                 }
 
                 $cfg = $Query # Query holds our hashtable of checkbox states
-                $Hash.LogQueue.Enqueue(">>> Applying Privacy, Ads, and Performance settings...")
+                $Hash.LogQueue.Enqueue(">>> Applying Customizations, Privacy, and Performance settings...")
                 
+                # --- CUSTOMIZATION ---
+                $Hash.LogQueue.Enqueue(">>> Applying Theme & Customization settings...")
+                
+                if ($cfg.DarkSystem) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "SystemUsesLightTheme" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "SystemUsesLightTheme" 1 }
+                
+                if ($cfg.DarkApps) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "AppsUseLightTheme" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "AppsUseLightTheme" 1 }
+                
+                if ($cfg.DisableTransparency) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "EnableTransparency" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "EnableTransparency" 1 }
+                
+                if ($cfg.TaskbarAccent) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "ColorPrevalence" 1 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "ColorPrevalence" 0 }
+                
+                if ($cfg.TitlebarAccent) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\DWM" "ColorPrevalence" 1 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\DWM" "ColorPrevalence" 0 }
+
+                $Hash.LogQueue.Enqueue(">>> Applying Taskbar settings...")
+                if ($cfg.TaskbarLeft) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "TaskbarAl" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "TaskbarAl" 1 }
+
+                if ($cfg.HideSearch) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" "SearchboxTaskbarMode" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" "SearchboxTaskbarMode" 1 }
+
+                if ($cfg.HideTaskView) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowTaskViewButton" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowTaskViewButton" 1 }
+
+                if ($cfg.HideChat) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "TaskbarMn" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "TaskbarMn" 1 }
+                
+                $Hash.LogQueue.Enqueue(">>> Applying Start Menu settings...")
+                if ($cfg.StartMorePins) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_Layout" 1 }
+                else { try { Remove-ItemProperty -Path "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" -Name "Start_Layout" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.StartHideRecentApps) { Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "HideRecentlyAddedApps" 1 }
+                else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "HideRecentlyAddedApps" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.StartHideMostUsed) { Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "ShowOrHideMostUsedApps" 1 }
+                else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" -Name "ShowOrHideMostUsedApps" -ErrorAction SilentlyContinue } catch {} }
+                
+                if ($cfg.StartHideRecentDocs) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_TrackDocs" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_TrackDocs" 1 }
+                
+                $Hash.LogQueue.Enqueue(">>> Applying File Explorer settings...")
+                if ($cfg.ExpHidden) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Hidden" 1 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Hidden" 2 }
+
+                if ($cfg.ExpExt) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "HideFileExt" 0 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "HideFileExt" 1 }
+
+                if ($cfg.ExpThisPC) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "LaunchTo" 1 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "LaunchTo" 2 }
+
+                if ($cfg.ExpCompact) { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "UseCompactMode" 1 }
+                else { Set-PrivacyRegKey "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "UseCompactMode" 0 }
+
+                if ($cfg.ExpClassicMenu) {
+                    $keyPath = "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32"
+                    if (-not (Test-Path $keyPath)) { New-Item -Path $keyPath -Force -ErrorAction SilentlyContinue | Out-Null }
+                    Set-ItemProperty -Path $keyPath -Name "(default)" -Value "" -ErrorAction SilentlyContinue
+                } else {
+                    $keyPath = "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}"
+                    if (Test-Path $keyPath) { Remove-Item -Path $keyPath -Recurse -Force -ErrorAction SilentlyContinue }
+                }
+
+                $Hash.LogQueue.Enqueue("    -> Note: Taskbar and Explorer changes may require restarting Explorer or logging out to take full effect.")
+
                 # --- PRIVACY & ADS ---
+                $Hash.LogQueue.Enqueue(">>> Applying Privacy & Ads settings...")
                 # 1. Telemetry
                 if ($cfg.Telemetry) {
                     $Hash.LogQueue.Enqueue("    -> Disabling Windows Telemetry (DiagTrack)")
@@ -1862,7 +2081,122 @@ $bgJobBlock = {
                     Set-PrivacyRegKey "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" "fAllowToGetHelp" 1
                 }
 
+                # --- ADVANCED PRIVACY (O&O) ---
+                if ($cfg.AppCamera) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Camera")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessCamera" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCamera" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.AppMic) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Microphone")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessMicrophone" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMicrophone" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.AppAccountInfo) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Account Info")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessAccountInfo" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessAccountInfo" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.AppContacts) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Contacts")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessContacts" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessContacts" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.AppCalendar) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Calendar")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessCalendar" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCalendar" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.AppEmail) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Email")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessEmail" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessEmail" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.AppCallHistory) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Call History")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessCallHistory" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessCallHistory" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.AppTasks) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Tasks")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessTasks" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessTasks" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.AppMessages) {
+                    $Hash.LogQueue.Enqueue("    -> Denying Apps Access to Messages")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessMessaging" 2
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" -Name "LetAppsAccessMessaging" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.DefenderTelemetry) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Windows Defender Telemetry (Spynet)")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" "SpynetReporting" 0
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" "SubmitSamplesConsent" 2
+                } else {
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SpynetReporting" -ErrorAction SilentlyContinue } catch {}
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" -Name "SubmitSamplesConsent" -ErrorAction SilentlyContinue } catch {}
+                }
+
+                if ($cfg.SmartScreen) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling SmartScreen Filter")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" "EnableSmartScreen" 0
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" -Name "EnableSmartScreen" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.P2PUpdate) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Windows Update Peer-to-Peer (Delivery Optimization)")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" "DODownloadMode" 0
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" -Name "DODownloadMode" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.Cortana) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Cortana")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" "AllowCortana" 0
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" -Name "AllowCortana" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.CEIP) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Customer Experience Improvement Program (CEIP)")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\SQMClient\Windows" "CEIPEnable" 0
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\SQMClient\Windows" -Name "CEIPEnable" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.Handwriting) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Typing and Inking Telemetry")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\TabletPC" "PreventHandwritingDataSharing" 1
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\InputPersonalization" "AllowInputPersonalization" 0
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\InputPersonalization" "RestrictImplicitTextCollection" 1
+                } else { 
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\TabletPC" -Name "PreventHandwritingDataSharing" -ErrorAction SilentlyContinue } catch {}
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\InputPersonalization" -Name "AllowInputPersonalization" -ErrorAction SilentlyContinue } catch {}
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\InputPersonalization" -Name "RestrictImplicitTextCollection" -ErrorAction SilentlyContinue } catch {}
+                }
+
+                if ($cfg.AutoDriverUpdate) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Automatic Driver Updates")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" "ExcludeWUDriversInQualityUpdate" 1
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" -Name "ExcludeWUDriversInQualityUpdate" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.EdgeTelemetry) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Microsoft Edge Telemetry")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Edge" "DiagnosticData" 0
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Edge" "SendSiteInfoToImproveServices" 0
+                } else { 
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "DiagnosticData" -ErrorAction SilentlyContinue } catch {}
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "SendSiteInfoToImproveServices" -ErrorAction SilentlyContinue } catch {}
+                }
+
+                if ($cfg.EdgeCopilot) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Microsoft Edge Copilot & Sidebar")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Edge" "HubsSidebarEnabled" 0
+                } else { try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "HubsSidebarEnabled" -ErrorAction SilentlyContinue } catch {} }
+
+                if ($cfg.EdgeSearchAds) {
+                    $Hash.LogQueue.Enqueue("    -> Disabling Microsoft Edge Search Suggestions")
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Edge" "SearchSuggestEnabled" 0
+                    Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Edge" "ResolveNavigationErrorsUseWebService" 0
+                } else { 
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "SearchSuggestEnabled" -ErrorAction SilentlyContinue } catch {}
+                    try { Remove-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "ResolveNavigationErrorsUseWebService" -ErrorAction SilentlyContinue } catch {}
+                }
+
                 # --- PERFORMANCE & GAMING ---
+                $Hash.LogQueue.Enqueue(">>> Applying Performance & Gaming settings...")
                 # 25. Game Mode
                 if ($cfg.GameMode) {
                     $Hash.LogQueue.Enqueue("    -> Enabling Windows Game Mode")
@@ -1973,7 +2307,7 @@ $bgJobBlock = {
                     Set-PrivacyRegKey "HKLM:\SOFTWARE\Policies\Microsoft\Windows\StorageSense" "AllowStorageSenseGlobal" 0
                 }
 
-                $Hash.LogQueue.Enqueue("[+] Optimization settings applied successfully.")
+                $Hash.LogQueue.Enqueue("[+] Optimization & Customization settings applied successfully.")
                 $Hash.Result = "Success"
             }
         }
@@ -2280,13 +2614,13 @@ $timer.Add_Tick({
                     $StatusText.Text = if ($res -match "Reboot") { "Drivers installed! System reboot required." } else { "Driver scan and update process completed." } 
                 }
                 'UtilSDIO'         { $StatusText.Text = "Snappy Driver Installer process completed." }
-                'ApplyOptimizations' { $StatusText.Text = "Optimization settings applied successfully." }
+                'ApplyOptimizations' { $StatusText.Text = "Optimization & Customization settings applied successfully." }
             }
         }
     }
 })
 
-# --- Privacy Check/Read Function ---
+# --- Privacy & Customization Check/Read Function ---
 function Read-OptimizeStates {
     # Helper to read registry silently
     function Get-PrivacyValue($Path, $Name, $ExpectedValue) {
@@ -2296,6 +2630,34 @@ function Read-OptimizeStates {
         } catch { return $false }
     }
     
+    # Read Customization States
+    $ChkDarkSystem.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "SystemUsesLightTheme" 0
+    $ChkDarkApps.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "AppsUseLightTheme" 0
+    $ChkDisableTransparency.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "EnableTransparency" 0
+    $ChkTaskbarAccent.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize" "ColorPrevalence" 1
+    $ChkTitlebarAccent.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\DWM" "ColorPrevalence" 1
+    
+    $ChkTaskbarLeft.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "TaskbarAl" 0
+    $ChkHideSearch.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Search" "SearchboxTaskbarMode" 0
+    $ChkHideTaskView.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowTaskViewButton" 0
+    $ChkHideChat.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "TaskbarMn" 0
+
+    # Read Start Menu States
+    $ChkStartMorePins.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_Layout" 1
+    $ChkStartHideRecentApps.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "HideRecentlyAddedApps" 1
+    $ChkStartHideMostUsed.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "ShowOrHideMostUsedApps" 1
+    $ChkStartHideRecentDocs.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_TrackDocs" 0
+
+    # Read File Explorer States
+    $ChkExpHidden.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Hidden" 1
+    $ChkExpExt.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "HideFileExt" 0
+    $ChkExpThisPC.IsChecked = (Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "LaunchTo" 1)
+    $ChkExpCompact.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "UseCompactMode" 1
+    try {
+        $classicMenuExists = Test-Path "HKCU:\Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32"
+        $ChkExpClassicMenu.IsChecked = $classicMenuExists
+    } catch { $ChkExpClassicMenu.IsChecked = $false }
+
     # Read Privacy States
     $ChkTelemetry.IsChecked   = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DataCollection" "AllowTelemetry" 0
     $ChkLocation.IsChecked    = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\LocationAndSensors" "DisableLocation" 1
@@ -2322,6 +2684,29 @@ function Read-OptimizeStates {
     $ChkWifiSense.IsChecked   = Get-PrivacyValue "HKLM:\SOFTWARE\Microsoft\WcmSvc\wifinetworkmanager\config" "AutoConnectAllowedOEM" 0
     $ChkRemoteAssist.IsChecked= Get-PrivacyValue "HKLM:\SYSTEM\CurrentControlSet\Control\Remote Assistance" "fAllowToGetHelp" 0
     
+    # Read Advanced Privacy (O&O) States
+    $ChkAppCamera.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessCamera" 2
+    $ChkAppMic.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessMicrophone" 2
+    $ChkAppAccountInfo.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessAccountInfo" 2
+    $ChkAppContacts.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessContacts" 2
+    $ChkAppCalendar.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessCalendar" 2
+    $ChkAppEmail.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessEmail" 2
+    $ChkAppCallHistory.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessCallHistory" 2
+    $ChkAppTasks.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessTasks" 2
+    $ChkAppMessages.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\AppPrivacy" "LetAppsAccessMessaging" 2
+    
+    $ChkDefenderTelemetry.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender\Spynet" "SpynetReporting" 0
+    $ChkSmartScreen.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\System" "EnableSmartScreen" 0
+    $ChkP2PUpdate.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\DeliveryOptimization" "DODownloadMode" 0
+    $ChkCortana.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search" "AllowCortana" 0
+    $ChkCEIP.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\SQMClient\Windows" "CEIPEnable" 0
+    $ChkHandwriting.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\TabletPC" "PreventHandwritingDataSharing" 1
+    $ChkAutoDriverUpdate.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsUpdate" "ExcludeWUDriversInQualityUpdate" 1
+    
+    $ChkEdgeTelemetry.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Edge" "DiagnosticData" 0
+    $ChkEdgeCopilot.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Edge" "HubsSidebarEnabled" 0
+    $ChkEdgeSearchAds.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Edge" "SearchSuggestEnabled" 0
+
     # Read Performance States
     $ChkGameMode.IsChecked          = Get-PrivacyValue "HKCU:\Software\Microsoft\GameBar" "AutoGameModeEnabled" 1
     $ChkCpuPriority.IsChecked       = Get-PrivacyValue "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Priority" 6
@@ -2338,11 +2723,31 @@ function Read-OptimizeStates {
 
 $RefreshOptimizeBtn.Add_Click({
     Read-OptimizeStates
-    $StatusText.Text = "Optimization settings refreshed from Registry."
+    $StatusText.Text = "Optimization & Customization settings refreshed from Registry."
 })
 
 $ApplyOptimizeBtn.Add_Click({
     $cfg = @{
+        # Customization Elements
+        DarkSystem          = $ChkDarkSystem.IsChecked -eq $true
+        DarkApps            = $ChkDarkApps.IsChecked -eq $true
+        DisableTransparency = $ChkDisableTransparency.IsChecked -eq $true
+        TaskbarAccent       = $ChkTaskbarAccent.IsChecked -eq $true
+        TitlebarAccent      = $ChkTitlebarAccent.IsChecked -eq $true
+        TaskbarLeft         = $ChkTaskbarLeft.IsChecked -eq $true
+        HideSearch          = $ChkHideSearch.IsChecked -eq $true
+        HideTaskView        = $ChkHideTaskView.IsChecked -eq $true
+        HideChat            = $ChkHideChat.IsChecked -eq $true
+        StartMorePins       = $ChkStartMorePins.IsChecked -eq $true
+        StartHideRecentApps = $ChkStartHideRecentApps.IsChecked -eq $true
+        StartHideMostUsed   = $ChkStartHideMostUsed.IsChecked -eq $true
+        StartHideRecentDocs = $ChkStartHideRecentDocs.IsChecked -eq $true
+        ExpHidden           = $ChkExpHidden.IsChecked -eq $true
+        ExpExt              = $ChkExpExt.IsChecked -eq $true
+        ExpThisPC           = $ChkExpThisPC.IsChecked -eq $true
+        ExpCompact          = $ChkExpCompact.IsChecked -eq $true
+        ExpClassicMenu      = $ChkExpClassicMenu.IsChecked -eq $true
+        
         # Privacy Elements
         Telemetry     = $ChkTelemetry.IsChecked -eq $true
         Location      = $ChkLocation.IsChecked -eq $true
@@ -2369,6 +2774,29 @@ $ApplyOptimizeBtn.Add_Click({
         WifiSense     = $ChkWifiSense.IsChecked -eq $true
         RemoteAssist  = $ChkRemoteAssist.IsChecked -eq $true
         
+        # O&O Privacy Elements
+        AppCamera         = $ChkAppCamera.IsChecked -eq $true
+        AppMic            = $ChkAppMic.IsChecked -eq $true
+        AppAccountInfo    = $ChkAppAccountInfo.IsChecked -eq $true
+        AppContacts       = $ChkAppContacts.IsChecked -eq $true
+        AppCalendar       = $ChkAppCalendar.IsChecked -eq $true
+        AppEmail          = $ChkAppEmail.IsChecked -eq $true
+        AppCallHistory    = $ChkAppCallHistory.IsChecked -eq $true
+        AppTasks          = $ChkAppTasks.IsChecked -eq $true
+        AppMessages       = $ChkAppMessages.IsChecked -eq $true
+        
+        DefenderTelemetry = $ChkDefenderTelemetry.IsChecked -eq $true
+        SmartScreen       = $ChkSmartScreen.IsChecked -eq $true
+        P2PUpdate         = $ChkP2PUpdate.IsChecked -eq $true
+        Cortana           = $ChkCortana.IsChecked -eq $true
+        CEIP              = $ChkCEIP.IsChecked -eq $true
+        Handwriting       = $ChkHandwriting.IsChecked -eq $true
+        AutoDriverUpdate  = $ChkAutoDriverUpdate.IsChecked -eq $true
+        
+        EdgeTelemetry     = $ChkEdgeTelemetry.IsChecked -eq $true
+        EdgeCopilot       = $ChkEdgeCopilot.IsChecked -eq $true
+        EdgeSearchAds     = $ChkEdgeSearchAds.IsChecked -eq $true
+
         # Performance Elements
         GameMode          = $ChkGameMode.IsChecked -eq $true
         CpuPriority       = $ChkCpuPriority.IsChecked -eq $true
@@ -2383,7 +2811,7 @@ $ApplyOptimizeBtn.Add_Click({
         StorageSense      = $ChkStorageSense.IsChecked -eq $true
     }
     $createRestore = $CreateRestorePointOptimizeCheck.IsChecked -eq $true
-    Start-WingetJob -Action "ApplyOptimizations" -Query $cfg -Id "" -StatusMsg "Applying optimization settings... Please wait." -CreateRestore $createRestore
+    Start-WingetJob -Action "ApplyOptimizations" -Query $cfg -Id "" -StatusMsg "Applying optimization & customization settings... Please wait." -CreateRestore $createRestore
 })
 
 # 7. Map Button Clicks
@@ -2914,7 +3342,7 @@ function Set-OfflineMode {
 
 # --- Auto-Load Installed Apps on Startup ---
 $Window.Add_Loaded({
-    Read-OptimizeStates # Read initial privacy and performance states
+    Read-OptimizeStates # Read initial privacy, custom, and performance states
     Set-OfflineMode  # Check network and apply UI changes
     
     $loadMsg = if ($script:IsOnline) { "Loading installed packages and checking for updates... This might take a moment." } else { "Loading installed packages locally (Offline Mode)..." }
