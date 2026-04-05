@@ -1070,6 +1070,10 @@ $bgJobBlock = {
                         $rawChoco += $line
                         $Hash.LogQueue.Enqueue($line)
                     }
+                    
+                    # FIX: Parse the raw output and add it to the combined results
+                    $parsedChoco = ConvertFrom-ChocoOutput $rawChoco
+                    $combinedResults += $parsedChoco
                 }
                 
                 $Hash.Result = $combinedResults
