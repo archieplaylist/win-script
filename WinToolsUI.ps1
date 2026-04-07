@@ -3716,7 +3716,7 @@ function Set-OfflineMode {
         $DiscoverTab.IsEnabled = $false
         
         # If the user is currently on the Discover tab when offline hits, switch to Installed tab
-        if ($MainTabs.SelectedItem -eq $DiscoverTab) {
+        if ($MainTabs.SelectedItem -eq $DiscoverTab -or $MainTabs.SelectedIndex -eq 0) {
             $MainTabs.SelectedIndex = 1
         }
         
