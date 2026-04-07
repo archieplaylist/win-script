@@ -232,44 +232,189 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
         
         <TabControl Name="MainTabs" Grid.Row="0" Margin="0,0,0,10">
             <!-- Discover Tab -->
-            <TabItem Name="DiscoverTab" Header="Discover / Search">
+            <TabItem Name="DiscoverTab" Header="Discover / Install">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="3*"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="2*"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     
-                    <!-- Row 0: Search Area -->
-                    <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
-                        <TextBox Name="SearchBox" Width="400" Margin="0,0,10,0" Padding="5" VerticalContentAlignment="Center"/>
-                        <Button Name="SearchBtn" Content="Search" Width="120" Padding="5"/>
-                    </StackPanel>
+                    <TabControl Name="DiscoverSubTabs" Grid.Row="0" Margin="0,0,0,10" Background="Transparent" BorderThickness="0">
+                        <!-- Sub Tab: Search -->
+                        <TabItem Header="Search Winget">
+                            <Grid Margin="0,10,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <!-- Search Area -->
+                                <StackPanel Orientation="Horizontal" Grid.Row="0" Margin="0,0,0,10">
+                                    <TextBox Name="SearchBox" Width="400" Margin="0,0,10,0" Padding="5" VerticalContentAlignment="Center"/>
+                                    <Button Name="SearchBtn" Content="Search" Width="120" Padding="5"/>
+                                </StackPanel>
+                                
+                                <!-- Search Results Grid -->
+                                <DataGrid Name="DiscoverGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended">
+                                    <DataGrid.ContextMenu>
+                                        <ContextMenu>
+                                            <MenuItem Name="DiscoverMenuDetails" Header="Show App Details..." />
+                                        </ContextMenu>
+                                    </DataGrid.ContextMenu>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
+                                        <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*"/>
+                                        <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="*"/>
+                                        <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                                
+                                <!-- Add To Queue Button -->
+                                <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,10,0,0" HorizontalAlignment="Right">
+                                    <Button Name="AddToQueueBtn" Content="Add Selected to Install Queue &#x2193;" Padding="8" Width="250" FontWeight="Bold"/>
+                                </StackPanel>
+                            </Grid>
+                        </TabItem>
+                        
+                        <!-- Sub Tab: Templates -->
+                        <TabItem Header="Quick Templates">
+                            <Grid Margin="0,10,0,0">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+                                
+                                <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto" Padding="0,0,10,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        
+                                        <!-- Column 1 -->
+                                        <StackPanel Grid.Column="0" VerticalAlignment="Top">
+                                            <!-- Utilities -->
+                                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="Utilities" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" Foreground="{StaticResource AccentColor}"/>
+                                                    <CheckBox Name="TplEverything" Content="Everything Search" Tag="Winget|voidtools.Everything" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplAnyDesk" Content="AnyDesk" Tag="Winget|AnyDesk.AnyDesk" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplTightVNC" Content="TightVNC" Tag="Winget|GlavSoft.TightVNC" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplWizTree" Content="WizTree" Tag="Winget|AntibodySoftware.WizTree" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplQBittorrent" Content="qBittorrent" Tag="Winget|qBittorrent.qBittorrent" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplLocalSend" Content="LocalSend" Tag="Winget|LocalSend.LocalSend" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplFileZilla" Content="FileZilla (Choco)" Tag="Chocolatey|filezilla" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplWinSCP" Content="WinSCP" Tag="Winget|WinSCP.WinSCP" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplHeidiSQL" Content="HeidiSQL" Tag="Winget|HeidiSQL.HeidiSQL" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplDBeaver" Content="DBeaver" Tag="Winget|DBeaver.DBeaver.Community" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplVSCode" Content="VS Code" Tag="Winget|Microsoft.VisualStudioCode" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplPython" Content="Python Manager" Tag="Winget|Python.PythonInstallManager" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplGit" Content="Git" Tag="Winget|Git.Git" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                        
+                                        <!-- Column 2 -->
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Top">
+                                            <!-- Browsers -->
+                                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="Web Browsers" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" Foreground="{StaticResource AccentColor}"/>
+                                                    <CheckBox Name="TplChrome" Content="Google Chrome" Tag="Winget|Google.Chrome" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplFirefox" Content="Firefox" Tag="Winget|Mozilla.Firefox" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplEdge" Content="Microsoft Edge" Tag="Winget|Microsoft.Edge" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplBrave" Content="Brave" Tag="Winget|Brave.Brave" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplVivaldi" Content="Vivaldi" Tag="Winget|Vivaldi.Vivaldi" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <!-- Media -->
+                                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="Media" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" Foreground="{StaticResource AccentColor}"/>
+                                                    <CheckBox Name="TpliTunes" Content="iTunes" Tag="Winget|Apple.iTunes" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplVLC" Content="VLC Media Player" Tag="Winget|VideoLAN.VLC" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplWinamp" Content="Winamp" Tag="Winget|Winamp.Winamp" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplAudacity" Content="Audacity" Tag="Winget|Audacity.Audacity" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplKLite" Content="K-Lite Codecs" Tag="Winget|CodecGuide.K-LiteCodecPack.Standard" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplHandBrake" Content="HandBrake" Tag="Winget|HandBrake.HandBrake" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                        
+                                        <!-- Column 3 -->
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Top">
+                                            <!-- Documents -->
+                                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="Documents" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" Foreground="{StaticResource AccentColor}"/>
+                                                    <CheckBox Name="TplLibreOffice" Content="LibreOffice" Tag="Winget|TheDocumentFoundation.LibreOffice" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplOnlyOffice" Content="OnlyOffice" Tag="Winget|ONLYOFFICE.DesktopEditors" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplOpenOffice" Content="OpenOffice" Tag="Winget|Apache.OpenOffice" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplPDF24" Content="PDF24 Creator" Tag="Winget|geeksoftwareGmbH.PDF24Creator" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                </StackPanel>
+                                            </Border>
+                                            
+                                            <!-- Imaging -->
+                                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="Imaging" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" Foreground="{StaticResource AccentColor}"/>
+                                                    <CheckBox Name="TplKrita" Content="Krita" Tag="Winget|KDE.Krita" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplPaintNet" Content="Paint.Net" Tag="Winget|dotPDN.PaintDotNet" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplGimp" Content="GIMP" Tag="Winget|GIMP.GIMP.3" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplInkscape" Content="Inkscape" Tag="Winget|Inkscape.Inkscape" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplFastStone" Content="FastStone Viewer" Tag="Winget|FastStone.Viewer" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Compression -->
+                                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="Compression" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" Foreground="{StaticResource AccentColor}"/>
+                                                    <CheckBox Name="Tpl7zip" Content="7-Zip" Tag="Winget|7zip.7zip" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplPeaZip" Content="PeaZip" Tag="Winget|Giorgiotani.Peazip" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplWinRAR" Content="WinRAR" Tag="Winget|RARLab.WinRAR" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- Column 4 -->
+                                        <StackPanel Grid.Column="3" VerticalAlignment="Top">
+                                            <!-- Messaging -->
+                                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="Messaging" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" Foreground="{StaticResource AccentColor}"/>
+                                                    <CheckBox Name="TplZoom" Content="Zoom" Tag="Winget|Zoom.Zoom" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplDiscord" Content="Discord" Tag="Winget|Discord.Discord" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplTeams" Content="Microsoft Teams" Tag="Winget|Microsoft.Teams" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplThunderbird" Content="Thunderbird" Tag="Winget|Mozilla.Thunderbird" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                </StackPanel>
+                                            </Border>
+
+                                            <!-- Gaming -->
+                                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,10">
+                                                <StackPanel>
+                                                    <TextBlock Text="Gaming" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,8" Foreground="{StaticResource AccentColor}"/>
+                                                    <CheckBox Name="TplSteam" Content="Steam" Tag="Winget|Valve.Steam" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplEpic" Content="Epic Games Launcher" Tag="Winget|EpicGames.EpicGamesLauncher" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                    <CheckBox Name="TplGOG" Content="GOG Galaxy" Tag="Winget|GOG.Galaxy" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                    </Grid>
+                                </ScrollViewer>
+                            </Grid>
+                        </TabItem>
+                    </TabControl>
                     
-                    <!-- Row 1: Search Results Grid -->
-                    <DataGrid Name="DiscoverGrid" Grid.Row="1" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended">
-                        <DataGrid.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Name="DiscoverMenuDetails" Header="Show App Details..." />
-                            </ContextMenu>
-                        </DataGrid.ContextMenu>
-                        <DataGrid.Columns>
-                            <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="2*"/>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*"/>
-                            <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="*"/>
-                            <DataGridTextColumn Header="Source" Binding="{Binding Source}" Width="*"/>
-                        </DataGrid.Columns>
-                    </DataGrid>
-                    
-                    <!-- Row 2: Queue Controls -->
-                    <StackPanel Orientation="Horizontal" Grid.Row="2" Margin="0,10,0,10" HorizontalAlignment="Right">
-                        <Button Name="AddToQueueBtn" Content="Add Selected to Install Queue &#x2193;" Padding="8" Width="250" FontWeight="Bold"/>
-                    </StackPanel>
-                    
-                    <!-- Row 3: Queue Grid -->
-                    <DataGrid Name="QueueGrid" Grid.Row="3" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended">
+                    <!-- Global Queue UI (Shared across sub-tabs) -->
+                    <TextBlock Grid.Row="1" Text="Installation Queue" FontWeight="SemiBold" Margin="0,0,0,5" Foreground="{StaticResource TextForeground}"/>
+                    <DataGrid Name="QueueGrid" Grid.Row="2" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended">
                         <DataGrid.ContextMenu>
                             <ContextMenu>
                                 <MenuItem Name="QueueMenuDetails" Header="Show App Details..." />
@@ -279,11 +424,12 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                             <DataGridTextColumn Header="Queued App Name" Binding="{Binding Name}" Width="2*"/>
                             <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="1.5*"/>
                             <DataGridTextColumn Header="Target Version" Binding="{Binding Version}" Width="*"/>
+                            <DataGridTextColumn Header="Manager" Binding="{Binding Manager}" Width="80"/>
                         </DataGrid.Columns>
                     </DataGrid>
                     
-                    <!-- Row 4: Final Actions -->
-                    <WrapPanel Grid.Row="4" Margin="0,10,0,0" HorizontalAlignment="Right">
+                    <!-- Final Actions -->
+                    <WrapPanel Grid.Row="3" Margin="0,10,0,0" HorizontalAlignment="Right">
                         <CheckBox Name="CreateRestorePointInstallCheck" Content="Create Restore Point" IsChecked="False" VerticalAlignment="Center" Margin="0,0,15,5" Foreground="{StaticResource TextForeground}"/>
                         <CheckBox Name="AdminInstallCheck" Content="Install for All Users (Admin)" IsChecked="True" VerticalAlignment="Center" Margin="0,0,15,5" Foreground="{StaticResource TextForeground}"/>
                         <Button Name="ImportQueueBtn" Content="Import Queue" Padding="8" Width="110" Margin="0,0,10,5"/>
@@ -471,6 +617,19 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                     <TextBlock Text="Toggle the switches below to disable telemetry tracking and system-wide advertisements. Hover over an item for details." Foreground="#AAAAAA" Margin="0,0,0,10"/>
                                     <TextBlock Name="PrivacyAdminWarning" Text="Administrator privileges are required to apply system-level privacy settings." Foreground="#FF6B6B" FontWeight="SemiBold" Visibility="Collapsed" Margin="0,0,0,15"/>
                                     
+                                    <!-- Templates Box -->
+                                    <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
+                                        <StackPanel>
+                                            <TextBlock Text="Privacy Templates" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                            <TextBlock Text="Quickly apply predefined combinations of privacy settings." Foreground="#AAAAAA" Margin="0,0,0,10"/>
+                                            <WrapPanel>
+                                                <Button Name="BtnPrivacyMinimal" Content="Minimal" ToolTip="Disables basic telemetry and OS ads without breaking functionality." Padding="15,8" Margin="0,0,10,0"/>
+                                                <Button Name="BtnPrivacyStandard" Content="Standard (Recommended)" ToolTip="Balances privacy and usability. Disables tracking, AI telemetry, and suggestions." Padding="15,8" Margin="0,0,10,0" Foreground="#6BA4FF"/>
+                                                <Button Name="BtnPrivacyMaximal" Content="Maximal" ToolTip="Disables all tracking, telemetry, AI, app permissions, and background features." Padding="15,8" Foreground="#FF6B6B"/>
+                                            </WrapPanel>
+                                        </StackPanel>
+                                    </Border>
+
                                     <!-- Telemetry Box -->
                                     <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,0,15">
                                         <StackPanel>
@@ -798,6 +957,24 @@ $CreateRestorePointInstallCheck = $Window.FindName("CreateRestorePointInstallChe
 $AdminInstallCheck = $Window.FindName("AdminInstallCheck")
 $InstallBtn = $Window.FindName("InstallBtn")
 
+# Fetch all template checkboxes programmatically
+$TemplateNames = @(
+    "TplChrome", "TplFirefox", "TplEdge", "TplBrave", "TplVivaldi",
+    "TplLibreOffice", "TplOnlyOffice", "TplOpenOffice", "TplPDF24",
+    "TplZoom", "TplDiscord", "TplTeams", "TplThunderbird",
+    "Tpl7zip", "TplPeaZip", "TplWinRAR",
+    "TpliTunes", "TplVLC", "TplWinamp", "TplAudacity", "TplKLite", "TplHandBrake",
+    "TplKrita", "TplPaintNet", "TplGimp", "TplInkscape", "TplFastStone",
+    "TplEverything", "TplAnyDesk", "TplTightVNC", "TplWizTree", "TplQBittorrent", "TplLocalSend", "TplFileZilla", "TplWinSCP", "TplHeidiSQL", "TplDBeaver", "TplVSCode", "TplPython", "TplGit",
+    "TplSteam", "TplEpic", "TplGOG"
+)
+
+$TemplateCheckboxes = @()
+foreach ($name in $TemplateNames) {
+    $chk = $Window.FindName($name)
+    if ($chk) { $TemplateCheckboxes += $chk }
+}
+
 # Utilities UI Map
 $UtilAdminWarning = $Window.FindName("UtilAdminWarning")
 $UtilSysScanBtn = $Window.FindName("UtilSysScanBtn")
@@ -824,6 +1001,10 @@ $UtilIconCacheBtn = $Window.FindName("UtilIconCacheBtn")
 $PrivacyAdminWarning = $Window.FindName("PrivacyAdminWarning")
 $PerfAdminWarning = $Window.FindName("PerfAdminWarning")
 
+$BtnPrivacyMinimal = $Window.FindName("BtnPrivacyMinimal")
+$BtnPrivacyStandard = $Window.FindName("BtnPrivacyStandard")
+$BtnPrivacyMaximal = $Window.FindName("BtnPrivacyMaximal")
+
 # Customization Checkboxes
 $ChkDarkSystem = $Window.FindName("ChkDarkSystem")
 $ChkDarkApps = $Window.FindName("ChkDarkApps")
@@ -834,14 +1015,10 @@ $ChkTaskbarLeft = $Window.FindName("ChkTaskbarLeft")
 $ChkHideSearch = $Window.FindName("ChkHideSearch")
 $ChkHideTaskView = $Window.FindName("ChkHideTaskView")
 $ChkHideChat = $Window.FindName("ChkHideChat")
-
-# Start Menu Checkboxes
 $ChkStartMorePins = $Window.FindName("ChkStartMorePins")
 $ChkStartHideRecentApps = $Window.FindName("ChkStartHideRecentApps")
 $ChkStartHideMostUsed = $Window.FindName("ChkStartHideMostUsed")
 $ChkStartHideRecentDocs = $Window.FindName("ChkStartHideRecentDocs")
-
-# File Explorer Checkboxes
 $ChkExpHidden = $Window.FindName("ChkExpHidden")
 $ChkExpExt = $Window.FindName("ChkExpExt")
 $ChkExpThisPC = $Window.FindName("ChkExpThisPC")
@@ -884,7 +1061,6 @@ $ChkAppEmail = $Window.FindName("ChkAppEmail")
 $ChkAppCallHistory = $Window.FindName("ChkAppCallHistory")
 $ChkAppTasks = $Window.FindName("ChkAppTasks")
 $ChkAppMessages = $Window.FindName("ChkAppMessages")
-
 $ChkDefenderTelemetry = $Window.FindName("ChkDefenderTelemetry")
 $ChkSmartScreen = $Window.FindName("ChkSmartScreen")
 $ChkP2PUpdate = $Window.FindName("ChkP2PUpdate")
@@ -892,7 +1068,6 @@ $ChkCortana = $Window.FindName("ChkCortana")
 $ChkCEIP = $Window.FindName("ChkCEIP")
 $ChkHandwriting = $Window.FindName("ChkHandwriting")
 $ChkAutoDriverUpdate = $Window.FindName("ChkAutoDriverUpdate")
-
 $ChkEdgeTelemetry = $Window.FindName("ChkEdgeTelemetry")
 $ChkEdgeCopilot = $Window.FindName("ChkEdgeCopilot")
 $ChkEdgeSearchAds = $Window.FindName("ChkEdgeSearchAds")
@@ -915,6 +1090,45 @@ $ApplyOptimizeBtn = $Window.FindName("ApplyOptimizeBtn")
 $CreateRestorePointOptimizeCheck = $Window.FindName("CreateRestorePointOptimizeCheck")
 
 $CreateRestorePointUpdateCheck = $Window.FindName("CreateRestorePointUpdateCheck")
+
+# --- Privacy Templates Logic ---
+$AllPrivacyChecks = @(
+    $ChkTelemetry, $ChkLocation, $ChkActivity, $ChkAppLaunch, $ChkLanguage, $ChkSpeech, $ChkTailoredExp, 
+    $ChkWER, $ChkFeedback, $ChkWorkplace, $ChkOneDrive, $ChkBingSearch, $ChkStartAds, $ChkLockScreenAds, 
+    $ChkExplorerAds, $ChkWelcomeExp, $ChkAdId, $ChkBitLocker, $ChkCopilot, $ChkWidgets, $ChkMaintenance, 
+    $ChkConsumer, $ChkWifiSense, $ChkRemoteAssist,
+    $ChkAppCamera, $ChkAppMic, $ChkAppAccountInfo, $ChkAppContacts, $ChkAppCalendar, $ChkAppEmail, 
+    $ChkAppCallHistory, $ChkAppTasks, $ChkAppMessages,
+    $ChkDefenderTelemetry, $ChkSmartScreen, $ChkP2PUpdate, $ChkCortana, $ChkCEIP, $ChkHandwriting, 
+    $ChkAutoDriverUpdate, $ChkEdgeTelemetry, $ChkEdgeCopilot, $ChkEdgeSearchAds
+)
+
+$BtnPrivacyMinimal.Add_Click({
+    $MinimalChecks = @(
+        $ChkTelemetry, $ChkTailoredExp, $ChkStartAds, $ChkLockScreenAds, $ChkExplorerAds, $ChkWelcomeExp, 
+        $ChkAdId, $ChkConsumer, $ChkCEIP, $ChkEdgeTelemetry, $ChkEdgeSearchAds
+    )
+    foreach ($chk in $AllPrivacyChecks) { $chk.IsChecked = $false }
+    foreach ($chk in $MinimalChecks) { $chk.IsChecked = $true }
+    $StatusText.Text = "Minimal privacy template selected. Click 'Apply Optimizations' to save."
+})
+
+$BtnPrivacyStandard.Add_Click({
+    $StandardChecks = @(
+        $ChkTelemetry, $ChkTailoredExp, $ChkStartAds, $ChkLockScreenAds, $ChkExplorerAds, $ChkWelcomeExp, 
+        $ChkAdId, $ChkConsumer, $ChkCEIP, $ChkEdgeTelemetry, $ChkEdgeSearchAds,
+        $ChkLocation, $ChkActivity, $ChkAppLaunch, $ChkLanguage, $ChkSpeech, $ChkWER, $ChkFeedback, 
+        $ChkBingSearch, $ChkWidgets, $ChkWifiSense, $ChkP2PUpdate, $ChkCortana, $ChkHandwriting
+    )
+    foreach ($chk in $AllPrivacyChecks) { $chk.IsChecked = $false }
+    foreach ($chk in $StandardChecks) { $chk.IsChecked = $true }
+    $StatusText.Text = "Standard privacy template selected. Click 'Apply Optimizations' to save."
+})
+
+$BtnPrivacyMaximal.Add_Click({
+    foreach ($chk in $AllPrivacyChecks) { $chk.IsChecked = $true }
+    $StatusText.Text = "Maximal privacy template selected. Click 'Apply Optimizations' to save."
+})
 
 # --- Apply Admin Status to UI ---
 if ($isActualAdmin) {
@@ -1016,10 +1230,50 @@ $NetworkStatusText = $Window.FindName("NetworkStatusText")
 $script:InstallQueue = New-Object System.Collections.ObjectModel.ObservableCollection[object]
 $QueueGrid.ItemsSource = $script:InstallQueue
 
+# --- Bind Quick Templates Checkboxes to Queue ---
+foreach ($chk in $TemplateCheckboxes) {
+    # When checked, add to queue
+    $chk.Add_Checked({
+        $source = $this
+        $tagData = $source.Tag -split '\|'
+        $mgr = $tagData[0]
+        $id = $tagData[1]
+        $name = $source.Content
+
+        $exists = $false
+        foreach ($q in $script:InstallQueue) {
+            if ($q.Id -eq $id) { $exists = $true; break }
+        }
+        if (-not $exists) {
+            $script:InstallQueue.Add([PSCustomObject]@{Name=$name; Id=$id; Version="Latest"; Manager=$mgr})
+        }
+    })
+
+    # When unchecked, remove from queue
+    $chk.Add_Unchecked({
+        $source = $this
+        $tagData = $source.Tag -split '\|'
+        $id = $tagData[1]
+
+        $toRemove = $null
+        foreach ($q in $script:InstallQueue) {
+            if ($q.Id -eq $id) {
+                $toRemove = $q
+                break
+            }
+        }
+        if ($toRemove -ne $null) {
+            $script:InstallQueue.Remove($toRemove) | Out-Null
+        }
+    })
+}
+
 # 3. Setup the Background Runspace (The Backend Engine)
 $syncHash = [hashtable]::Synchronized(@{})
 $syncHash.LogQueue = [System.Collections.Concurrent.ConcurrentQueue[string]]::new()
 $syncHash.AppPath = if ($PSCommandPath) { Split-Path -Parent $PSCommandPath } else { $PWD.Path }
+$syncHash.IsOnline = $null
+
 $runspace = [runspacefactory]::CreateRunspace()
 $runspace.Open()
 $runspace.SessionStateProxy.SetVariable("syncHash", $syncHash)
@@ -1033,9 +1287,69 @@ $script:AllInstalledApps = $null
 $bgJobBlock = {
     param($Action, $Query, $Id, $Hash, $IsAdmin, $CreateRestore, $Manager)
     
+    $ProgressPreference = 'SilentlyContinue' # Hide default PS progress bar
     # Force PowerShell to read external Winget output using UTF-8 to prevent 'ΓÇª' encoding issues
     [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
     $OutputEncoding = [System.Text.Encoding]::UTF8
+    
+    # --- Safe logger to filter out progress percentage spam ---
+    function Write-FilteredLog {
+        param($raw)
+        $str = $raw.ToString()
+        
+        # 1. Strip ANSI escape sequences
+        $str = $str -replace "\x1B\[[0-9;]*[a-zA-Z]", ""
+        
+        # 2. Extract Percentage and convert to a clean, single-line UI element
+        if ($str -match '(?<pct>\d{1,3})(?:\.\d+)?\s*%') {
+            $pct = [int]$matches['pct']
+            $Hash.Progress = $pct
+            
+            # Format a clean progress bar string
+            $barCount = [math]::Floor($pct / 5)
+            if ($barCount -gt 20) { $barCount = 20 }
+            if ($barCount -lt 0) { $barCount = 0 }
+            $bars = "█" * $barCount
+            $spaces = "▒" * (20 - $barCount)
+            
+            # Send with a special [PROGRESS] tag so the UI knows to overwrite the line
+            $Hash.LogQueue.Enqueue("[PROGRESS] Progress: [$bars$spaces] $pct%")
+            return 
+        }
+
+        # 2.5 Catch Winget's raw MB/MB download output (Calculates percentage dynamically)
+        if ($str -match '(?<curr>\d+(?:\.\d+)?)\s*[A-Z]B\s*/\s*(?<tot>\d+(?:\.\d+)?)\s*[A-Z]B') {
+            try {
+                $c = [double]$matches['curr']
+                $t = [double]$matches['tot']
+                if ($t -gt 0) {
+                    $pct = [int][math]::Round(($c / $t) * 100)
+                    $Hash.Progress = $pct
+                    
+                    $barCount = [math]::Floor($pct / 5)
+                    if ($barCount -gt 20) { $barCount = 20 }
+                    if ($barCount -lt 0) { $barCount = 0 }
+                    $bars = "█" * $barCount
+                    $spaces = "▒" * (20 - $barCount)
+                    
+                    $Hash.LogQueue.Enqueue("[PROGRESS] Downloading: [$bars$spaces] $pct% ($c / $t)")
+                }
+            } catch {}
+            return
+        }
+
+        # 3. Strip Control Characters (Backspaces, Carriage Returns)
+        $str = $str -replace "[\b\r]", ""
+        $str = $str.Trim()
+        
+        if ([string]::IsNullOrWhiteSpace($str)) { return }
+        
+        # 4. Ignore isolated spinner characters and stray raw blocks
+        if ($str -in @('\', '|', '/', '-')) { return }
+        if ($str -match '[█▒▓░]') { return }
+        
+        $Hash.LogQueue.Enqueue($str)
+    }
     
     # Helper to create restore points and bypass the Windows 24-hour limit
     function New-BypassRestorePoint($Desc) {
@@ -1196,7 +1510,7 @@ $bgJobBlock = {
                 $wingetArgs = @("search", $Query, "--count", "40", "--accept-source-agreements", "--disable-interactivity")
                 & winget @wingetArgs 2>&1 | ForEach-Object {
                     $line = $_.ToString()
-                    $Hash.LogQueue.Enqueue($line)
+                    Write-FilteredLog $line
                     $rawWinget += $line
                 }
                 
@@ -1218,7 +1532,7 @@ $bgJobBlock = {
                     & choco search $Query -r 2>&1 | ForEach-Object {
                         $line = $_.ToString()
                         $rawChoco += $line
-                        $Hash.LogQueue.Enqueue($line)
+                        Write-FilteredLog $line
                     }
                     
                     # Parse the raw output and add it to the combined results
@@ -1266,7 +1580,7 @@ $bgJobBlock = {
                     $wingetArgs = @("list", "--accept-source-agreements", "--disable-interactivity")
                     & winget @wingetArgs 2>&1 | ForEach-Object {
                         $line = $_.ToString()
-                        $Hash.LogQueue.Enqueue($line)
+                        Write-FilteredLog $line
                         $rawWinget += $line
                     }
                     $parsedWinget = ConvertFrom-WingetOutput $rawWinget
@@ -1336,28 +1650,46 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before installation...")
                     New-BypassRestorePoint -Desc "WinToolsUI Install" | Out-Null
                 }
+
+                # --- Auto-Install Chocolatey if needed by the Queue ---
+                $needsChoco = $false
                 foreach ($item in @($Id)) {
-                    # Determine if input is simple string (legacy) or object
+                    $mgr = if ($item -is [string]) { $Manager } else { $item.Manager }
+                    if ($mgr -eq 'Chocolatey') { $needsChoco = $true; break }
+                }
+
+                if ($needsChoco -and -not (Get-Command choco -ErrorAction SilentlyContinue)) {
+                    $Hash.LogQueue.Enqueue("`r`n>>> Chocolatey is required for queued packages but is not installed.")
+                    $Hash.LogQueue.Enqueue(">>> Auto-installing Chocolatey Package Manager first...")
+                    try {
+                        Set-ExecutionPolicy Bypass -Scope Process -Force
+                        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+                        $installCmd = "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
+                        
+                        Invoke-Expression $installCmd | Out-String -Stream | ForEach-Object { Write-FilteredLog $_ }
+                        
+                        # Refresh environment path so the 'choco' command is immediately available to this background runspace
+                        $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
+                        
+                        $Hash.LogQueue.Enqueue("[+] Chocolatey installed successfully. Continuing with package queue...")
+                    } catch {
+                        $Hash.LogQueue.Enqueue("[-] Failed to install Chocolatey: $($_.Exception.Message)")
+                    }
+                }
+                # ------------------------------------------------------
+
+                foreach ($item in @($Id)) {
                     if ($item -is [string]) { $targetId = $item; $mgr = $Manager } else { $targetId = $item.Id; $mgr = $item.Manager }
                     
                     if ($mgr -eq 'Chocolatey') {
                         $Hash.LogQueue.Enqueue("`r`n>>> Executing: choco install $targetId")
-                        & choco install $targetId -y 2>&1 | ForEach-Object {
-                            $l = $_.ToString().Trim()
-                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
-                        }
+                        & choco install $targetId -y 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                     } else {
                         $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget install $targetId")
                         $wingetArgs = @("install", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
                         if ($IsAdmin) { $wingetArgs += "--scope"; $wingetArgs += "machine" }
                         
-                        & winget @wingetArgs 2>&1 | ForEach-Object {
-                            $l = $_.ToString().Trim()
-                            if ($l -in @('\', '|', '/', '-')) { return }
-                            if ($l -match '(?<pct>\d{1,3})\s*%') { $Hash.Progress = [int]$matches['pct']; return }
-                            if ($l -match '█') { return }
-                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
-                        }
+                        & winget @wingetArgs 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                     }
                 }
                 $Hash.Result = "Success"
@@ -1372,15 +1704,11 @@ $bgJobBlock = {
                     
                     if ($mgr -eq 'Chocolatey') {
                         $Hash.LogQueue.Enqueue("`r`n>>> Executing: choco uninstall $targetId")
-                        & choco uninstall $targetId -y 2>&1 | ForEach-Object {
-                            $l = $_.ToString().Trim()
-                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
-                        }
+                        & choco uninstall $targetId -y 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                     } elseif ($mgr -eq 'Native') {
                         $Hash.LogQueue.Enqueue("`r`n>>> Executing Native Uninstaller...")
                         $Hash.LogQueue.Enqueue("Command: $targetId")
                         try {
-                            # Execute the raw uninstall string fetched from the registry
                             Start-Process cmd.exe -ArgumentList "/c", "$targetId" -Wait -WindowStyle Hidden -ErrorAction Stop
                             $Hash.LogQueue.Enqueue("Uninstall triggered successfully. (Note: Some installers may pop up in the background).")
                         } catch {
@@ -1389,11 +1717,8 @@ $bgJobBlock = {
                     } elseif ($mgr -eq 'NativeAppx') {
                         $Hash.LogQueue.Enqueue("`r`n>>> Removing Appx Package: $targetId")
                         try {
-                            if ($IsAdmin) {
-                                Remove-AppxPackage -Package $targetId -AllUsers -ErrorAction Stop
-                            } else {
-                                Remove-AppxPackage -Package $targetId -ErrorAction Stop
-                            }
+                            if ($IsAdmin) { Remove-AppxPackage -Package $targetId -AllUsers -ErrorAction Stop } 
+                            else { Remove-AppxPackage -Package $targetId -ErrorAction Stop }
                             $Hash.LogQueue.Enqueue("Appx Package removed successfully.")
                         } catch {
                             $Hash.LogQueue.Enqueue("Error: $($_.Exception.Message)")
@@ -1401,13 +1726,7 @@ $bgJobBlock = {
                     } else {
                         $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget uninstall $targetId")
                         $wingetArgs = @("uninstall", "--id", $targetId, "--exact", "--silent", "--disable-interactivity")
-                        & winget @wingetArgs 2>&1 | ForEach-Object {
-                            $l = $_.ToString().Trim()
-                            if ($l -in @('\', '|', '/', '-')) { return }
-                            if ($l -match '(?<pct>\d{1,3})\s*%') { $Hash.Progress = [int]$matches['pct']; return }
-                            if ($l -match '█') { return }
-                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
-                        }
+                        & winget @wingetArgs 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                     }
                 }
                 $Hash.Result = "Success"
@@ -1422,20 +1741,11 @@ $bgJobBlock = {
                     
                     if ($mgr -eq 'Chocolatey') {
                         $Hash.LogQueue.Enqueue("`r`n>>> Executing: choco upgrade $targetId")
-                        & choco upgrade $targetId -y 2>&1 | ForEach-Object {
-                            $l = $_.ToString().Trim()
-                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
-                        }
+                        & choco upgrade $targetId -y 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                     } else {
                         $Hash.LogQueue.Enqueue("`r`n>>> Executing: winget upgrade $targetId")
                         $wingetArgs = @("upgrade", "--id", $targetId, "--exact", "--accept-source-agreements", "--accept-package-agreements", "--silent", "--disable-interactivity")
-                        & winget @wingetArgs 2>&1 | ForEach-Object {
-                            $l = $_.ToString().Trim()
-                            if ($l -in @('\', '|', '/', '-')) { return }
-                            if ($l -match '(?<pct>\d{1,3})\s*%') { $Hash.Progress = [int]$matches['pct']; return }
-                            if ($l -match '█') { return }
-                            if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
-                        }
+                        & winget @wingetArgs 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                     }
                 }
                 $Hash.Result = "Success"
@@ -1447,7 +1757,7 @@ $bgJobBlock = {
                     & choco info $Id 2>&1 | ForEach-Object {
                         $line = $_.ToString()
                         $raw += $line
-                        $Hash.LogQueue.Enqueue($line)
+                        Write-FilteredLog $line
                     }
                     $Hash.Result = $raw -join "`r`n"
                 } else {
@@ -1456,7 +1766,7 @@ $bgJobBlock = {
                     $wingetArgs = @("show", "--id", $Id, "--exact", "--accept-source-agreements", "--disable-interactivity")
                     & winget @wingetArgs 2>&1 | ForEach-Object {
                         $line = $_.ToString()
-                        $Hash.LogQueue.Enqueue($line)
+                        Write-FilteredLog $line
                         $raw += $line
                     }
                     $Hash.Result = $raw -join "`r`n"
@@ -1465,16 +1775,10 @@ $bgJobBlock = {
             'UtilSystemScan' {
                 $Hash.LogQueue.Enqueue(">>> Running DISM Component Store Cleanup and Repair...")
                 $Hash.LogQueue.Enqueue(">>> (This may take several minutes to complete)")
-                & DISM.exe /Online /Cleanup-image /Restorehealth 2>&1 | ForEach-Object {
-                    $l = $_.ToString().Trim()
-                    if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
-                }
+                & DISM.exe /Online /Cleanup-image /Restorehealth 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                 
                 $Hash.LogQueue.Enqueue("`r`n>>> Running System File Checker (SFC)...")
-                & sfc /scannow 2>&1 | ForEach-Object {
-                    $l = $_.ToString().Trim()
-                    if (-not [string]::IsNullOrWhiteSpace($l)) { $Hash.LogQueue.Enqueue($l) }
-                }
+                & sfc /scannow 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                 $Hash.Result = "Success"
             }
             'UtilResetWU' {
@@ -1508,12 +1812,12 @@ $bgJobBlock = {
             'UtilResetNet' {
                 $Hash.LogQueue.Enqueue(">>> Releasing and Renewing IP...")
                 & ipconfig /release 2>&1 | Out-Null
-                & ipconfig /flushdns 2>&1 | ForEach-Object { if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) } }
+                & ipconfig /flushdns 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                 & ipconfig /renew 2>&1 | Out-Null
                 
                 $Hash.LogQueue.Enqueue(">>> Resetting Winsock and IP Configuration...")
-                & netsh winsock reset 2>&1 | ForEach-Object { if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) } }
-                & netsh int ip reset 2>&1 | ForEach-Object { if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) } }
+                & netsh winsock reset 2>&1 | ForEach-Object { Write-FilteredLog $_ }
+                & netsh int ip reset 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                 $Hash.Result = "Success"
             }
             'UtilSMB' {
@@ -1571,9 +1875,7 @@ $bgJobBlock = {
             }
             'UtilWingetRepair' {
                 $Hash.LogQueue.Enqueue(">>> Resetting Winget Sources...")
-                & winget source reset --force 2>&1 | ForEach-Object {
-                    if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) }
-                }
+                & winget source reset --force 2>&1 | ForEach-Object { Write-FilteredLog $_ }
                 $Hash.Result = "Success"
             }
             'UtilInstallChoco' {
@@ -1584,9 +1886,7 @@ $bgJobBlock = {
                     [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
                     $installCmd = "iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))"
                     
-                    Invoke-Expression $installCmd | Out-String -Stream | ForEach-Object {
-                         if (-not [string]::IsNullOrWhiteSpace($_)) { $Hash.LogQueue.Enqueue($_) }
-                    }
+                    Invoke-Expression $installCmd | Out-String -Stream | ForEach-Object { Write-FilteredLog $_ }
                     
                     $Hash.LogQueue.Enqueue(">>> Installation command executed.")
                     $Hash.LogQueue.Enqueue("Note: You may need to restart the application or computer for 'choco' to appear in path.")
@@ -1788,12 +2088,11 @@ $bgJobBlock = {
                 
                 if ($SDIOPath) {
                     $Hash.LogQueue.Enqueue(">>> Launching Snappy Driver Installer...")
-                    $Hash.LogQueue.Enqueue("    -> Updating indexes, analyzing hardware, and installing drivers.")
-                    $Hash.LogQueue.Enqueue("    -> (App will run minimized in the taskbar. This may take several minutes...)")
+                    $Hash.LogQueue.Enqueue("    -> Opening SDIO interface.")
                     
-                    Start-Process -FilePath $SDIOPath -ArgumentList "-autoupdate", "-autoinstall", "-autoclose" -WindowStyle Minimized -Wait
+                    Start-Process -FilePath $SDIOPath
                     
-                    $Hash.LogQueue.Enqueue("[+] SDIO Process Finished.")
+                    $Hash.LogQueue.Enqueue("[+] SDIO launched successfully.")
                     $Hash.Result = "Success (SDIO)"
                 } else {
                     $Hash.LogQueue.Enqueue("[-] SDIO execution aborted. Executable not found after extraction.")
@@ -1882,6 +2181,7 @@ $bgJobBlock = {
                 }
 
                 $Hash.LogQueue.Enqueue("    -> Note: Taskbar and Explorer changes may require restarting Explorer or logging out to take full effect.")
+
 
                 # --- PRIVACY & ADS ---
                 $Hash.LogQueue.Enqueue(">>> Applying Privacy & Ads settings...")
@@ -2210,7 +2510,7 @@ $bgJobBlock = {
                     $Hash.LogQueue.Enqueue("    -> Optimizing CPU/GPU Priority & System Responsiveness for Gaming")
                     Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Priority" 6
                     Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Scheduling Category" "High" "String"
-                    Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "GPU Priority" 8
+                    Set-PrivacyRegKey "HKLM:\Software\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "GPU Priority" 8
                     Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile" "SystemResponsiveness" 10
                 } else {
                     Set-PrivacyRegKey "HKLM:\Software\Microsoft\Windows NT\CurrentVersion\Multimedia\SystemProfile\Tasks\Games" "Priority" 2
@@ -2325,6 +2625,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $C
     }
     
     $script:IsJobRunning = $true
+    $script:LastLogWasProgress = $false
     
     # Clear the live log UI and Queue
     $LogTextBox.Clear()
@@ -2410,18 +2711,54 @@ $timer = New-Object System.Windows.Threading.DispatcherTimer
 $timer.Interval = [TimeSpan]::FromMilliseconds(200)
 
 $timer.Add_Tick({
-    # Drain the live log queue and append to the TextBox
-    $newLogs = [System.Text.StringBuilder]::new()
-    $logLine = [string]::Empty
-    while ($syncHash.LogQueue.TryDequeue([ref]$logLine)) {
-        [void]$newLogs.AppendLine($logLine)
+    # --- Monitor Background Network State ---
+    if ($syncHash.IsOnline -ne $null -and $syncHash.IsOnline -ne $script:IsOnline) {
+        $script:IsOnline = $syncHash.IsOnline
+        Set-OfflineMode
+        
+        if ($script:IsOnline) {
+            $syncHash.LogQueue.Enqueue("`r`n[NETWORK] Internet connection restored. Online mode activated.")
+        } else {
+            $syncHash.LogQueue.Enqueue("`r`n[NETWORK] Internet connection lost. Switched to Offline mode.")
+        }
     }
-    if ($newLogs.Length -gt 0) {
-        $LogTextBox.AppendText($newLogs.ToString())
+
+    # Drain the live log queue
+    $logLine = [string]::Empty
+    $queueItems = @()
+    while ($syncHash.LogQueue.TryDequeue([ref]$logLine)) {
+        $queueItems += $logLine
+    }
+    
+    # Process updates into the LogTextBox
+    if ($queueItems.Count -gt 0) {
+        $txt = $LogTextBox.Text
+        
+        foreach ($item in $queueItems) {
+            # Check if this line is a streaming progress update
+            if ($item -match "^\[PROGRESS\](.*)") {
+                $progText = $matches[1]
+                
+                if ($script:LastLogWasProgress) {
+                    # Overwrite the last line for a seamless streaming effect
+                    $idx = $txt.LastIndexOf("`r`n")
+                    if ($idx -ge 0) { $txt = $txt.Substring(0, $idx) } else { $txt = "" }
+                }
+                
+                if ($txt.Length -gt 0) { $txt += "`r`n$progText" } else { $txt = "$progText" }
+                $script:LastLogWasProgress = $true
+            } else {
+                # Normal log line
+                if ($txt.Length -gt 0) { $txt += "`r`n$item" } else { $txt = "$item" }
+                $script:LastLogWasProgress = $false
+            }
+        }
+        
+        $LogTextBox.Text = $txt
         $LogTextBox.ScrollToEnd()
     }
     
-    # Check if a live percentage was reported back from Winget
+    # Check if a live percentage was reported back from Winget (for the GUI bar)
     if ($syncHash.Progress -ne $null) {
         if ($JobProgress.IsIndeterminate) {
             # Switch from spinning mode to solid fill mode
@@ -2432,7 +2769,7 @@ $timer.Add_Tick({
     }
 
     if ($script:asyncResult -ne $null -and $script:asyncResult.IsCompleted) {
-        $timer.Stop()
+        # REMOVED $timer.Stop() here so the UI continues checking network state even when idle!
         
         try {
             $script:psInstance.EndInvoke($script:asyncResult)
@@ -2442,6 +2779,10 @@ $timer.Add_Tick({
         }
         
         $script:psInstance.Dispose()
+        
+        # Reset states so we don't process completion twice and don't freeze the progress bar
+        $script:asyncResult = $null 
+        $syncHash.Progress = $null
         
         # Mark the job as finished EARLY so chained jobs (like Refreshing) can start successfully
         $script:IsJobRunning = $false
@@ -2492,6 +2833,11 @@ $timer.Add_Tick({
                 'Install' { 
                     $StatusText.Text = "Installation finished successfully." 
                     $script:InstallQueue.Clear() # Empty the queue when finished
+                    
+                    # Uncheck all template checkboxes to match the empty queue
+                    foreach ($chk in $TemplateCheckboxes) {
+                        $chk.IsChecked = $false
+                    }
                 }
                 'Uninstall' { 
                     $StatusText.Text = "Uninstallation finished. Scanning for leftovers..."
@@ -2613,7 +2959,7 @@ $timer.Add_Tick({
                 'UtilDriverUpdate' { 
                     $StatusText.Text = if ($res -match "Reboot") { "Drivers installed! System reboot required." } else { "Driver scan and update process completed." } 
                 }
-                'UtilSDIO'         { $StatusText.Text = "Snappy Driver Installer process completed." }
+                'UtilSDIO'         { $StatusText.Text = "Snappy Driver Installer opened." }
                 'ApplyOptimizations' { $StatusText.Text = "Optimization & Customization settings applied successfully." }
             }
         }
@@ -2642,13 +2988,11 @@ function Read-OptimizeStates {
     $ChkHideTaskView.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "ShowTaskViewButton" 0
     $ChkHideChat.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "TaskbarMn" 0
 
-    # Read Start Menu States
     $ChkStartMorePins.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_Layout" 1
     $ChkStartHideRecentApps.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "HideRecentlyAddedApps" 1
     $ChkStartHideMostUsed.IsChecked = Get-PrivacyValue "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Explorer" "ShowOrHideMostUsedApps" 1
     $ChkStartHideRecentDocs.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Start_TrackDocs" 0
 
-    # Read File Explorer States
     $ChkExpHidden.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "Hidden" 1
     $ChkExpExt.IsChecked = Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "HideFileExt" 0
     $ChkExpThisPC.IsChecked = (Get-PrivacyValue "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Advanced" "LaunchTo" 1)
@@ -2869,6 +3213,32 @@ $AddToQueueBtn.Add_Click({
     }
 })
 
+$AddTemplatesToQueueBtn.Add_Click({
+    $addedCount = 0
+    foreach ($chk in $TemplateCheckboxes) {
+        if ($chk.IsChecked) {
+            $tagData = $chk.Tag -split '\|'
+            $mgr = $tagData[0]
+            $id = $tagData[1]
+            $name = $chk.Content
+
+            $exists = $false
+            foreach ($q in $script:InstallQueue) {
+                if ($q.Id -eq $id) { $exists = $true; break }
+            }
+            if (-not $exists) {
+                $script:InstallQueue.Add([PSCustomObject]@{Name=$name; Id=$id; Version="Latest"; Manager=$mgr})
+                $addedCount++
+            }
+            # Uncheck it so the user knows it has been processed
+            $chk.IsChecked = $false
+        }
+    }
+    if ($addedCount -eq 0) {
+        [System.Windows.MessageBox]::Show("No new templates were added. Ensure you have checked items that aren't already in the queue below.", "No Items Added", [System.Windows.MessageBoxButton]::OK, [System.Windows.MessageBoxImage]::Information)
+    }
+})
+
 $DiscoverGrid.Add_MouseDoubleClick({
     if ($DiscoverGrid.SelectedItem -ne $null) {
         $item = $DiscoverGrid.SelectedItem
@@ -2889,6 +3259,15 @@ $RemoveFromQueueBtn.Add_Click({
     $toRemove = @($QueueGrid.SelectedItems)
     foreach ($item in $toRemove) {
         $script:InstallQueue.Remove($item)
+        
+        # Keep checkboxes visually in sync if an item is removed manually
+        foreach ($chk in $TemplateCheckboxes) {
+            $tagData = $chk.Tag -split '\|'
+            if ($tagData[1] -eq $item.Id) {
+                $chk.IsChecked = $false
+                break
+            }
+        }
     }
 })
 
@@ -2919,7 +3298,8 @@ $ImportQueueBtn.Add_Click({
                 $exists = $false
                 foreach ($q in $script:InstallQueue) { if ($q.Id -eq $item.Id) { $exists = $true; break } }
                 if (-not $exists) {
-                    $script:InstallQueue.Add([PSCustomObject]@{Name=$item.Name; Id=$item.Id; Version="Latest"})
+                    $mgr = if ($item.Manager) { $item.Manager } else { "Winget" } # Fallback to Winget if standard exported queue
+                    $script:InstallQueue.Add([PSCustomObject]@{Name=$item.Name; Id=$item.Id; Version="Latest"; Manager=$mgr})
                     $addedCount++
                 }
             }
@@ -3252,6 +3632,7 @@ $UtilSDIOBtn.Add_Click({
 # --- Network Connection Check & Offline Restrictions ---
 function Test-InternetConnection {
     try {
+        if (-not [System.Net.NetworkInformation.NetworkInterface]::GetIsNetworkAvailable()) { return $false }
         # Check internet quickly against a highly available Microsoft ping endpoint
         $req = [System.Net.WebRequest]::Create("http://www.msftconnecttest.com/connecttest.txt")
         $req.Timeout = 2500
@@ -3263,8 +3644,30 @@ function Test-InternetConnection {
     }
 }
 
+# Start Background Network Monitor (Continuously polls every 3 seconds safely in the background)
+$netPollerBlock = {
+    param($sync)
+    while ($true) {
+        try {
+            if (-not [System.Net.NetworkInformation.NetworkInterface]::GetIsNetworkAvailable()) {
+                $sync.IsOnline = $false
+            } else {
+                $req = [System.Net.WebRequest]::Create("http://www.msftconnecttest.com/connecttest.txt")
+                $req.Timeout = 3000
+                $res = $req.GetResponse()
+                $res.Close()
+                $sync.IsOnline = $true
+            }
+        } catch {
+            $sync.IsOnline = $false
+        }
+        Start-Sleep -Seconds 3
+    }
+}
+$script:netPollerPS = [PowerShell]::Create().AddScript($netPollerBlock).AddArgument($syncHash)
+$script:netPollerPS.BeginInvoke() | Out-Null
+
 function Set-OfflineMode {
-    $script:IsOnline = Test-InternetConnection
     if ($script:IsOnline) {
         $NetworkStatusText.Text = "Online"
         $NetworkStatusText.Foreground = "#73D96B"
@@ -3272,7 +3675,8 @@ function Set-OfflineMode {
         
         # Re-enable UI elements if it was previously offline
         if (-not $script:WingetMissing) {
-            $DiscoverTab.Header = "Discover / Search"
+            $DiscoverTab.Header = "Discover / Install"
+            $DiscoverTab.IsEnabled = $true
             $UtilWingetRepairBtn.IsEnabled = $true -and $isActualAdmin
         }
         $SearchBtn.Content = "Search"
@@ -3309,6 +3713,13 @@ function Set-OfflineMode {
         
         # Disable Online Features and Append "(Offline)"
         $DiscoverTab.Header = "Discover (Offline)"
+        $DiscoverTab.IsEnabled = $false
+        
+        # If the user is currently on the Discover tab when offline hits, switch to Installed tab
+        if ($MainTabs.SelectedItem -eq $DiscoverTab) {
+            $MainTabs.SelectedIndex = 1
+        }
+        
         $SearchBtn.Content = "Search (Offline)"
         $SearchBtn.IsEnabled = $false
         
@@ -3342,8 +3753,18 @@ function Set-OfflineMode {
 
 # --- Auto-Load Installed Apps on Startup ---
 $Window.Add_Loaded({
+    $timer.Start() # Ensure the global UI timer starts immediately and runs continuously
     Read-OptimizeStates # Read initial privacy, custom, and performance states
+    
+    # Initial synchronous check so UI loads correctly before poller kicks in
+    $script:IsOnline = Test-InternetConnection
+    $syncHash.IsOnline = $script:IsOnline
     Set-OfflineMode  # Check network and apply UI changes
+    
+    # Switch to 'Installed & Updates' tab automatically if starting in Offline Mode
+    if (-not $script:IsOnline) {
+        $MainTabs.SelectedIndex = 1
+    }
     
     $loadMsg = if ($script:IsOnline) { "Loading installed packages and checking for updates... This might take a moment." } else { "Loading installed packages locally (Offline Mode)..." }
     Start-WingetJob -Action "Installed" -Query "" -Id "" -StatusMsg $loadMsg
@@ -3353,5 +3774,9 @@ $Window.Add_Loaded({
 $Window.ShowDialog() | Out-Null
 
 # Cleanup memory once the window is closed
+if ($script:netPollerPS) {
+    $script:netPollerPS.Stop()
+    $script:netPollerPS.Dispose()
+}
 $runspace.Close()
 $runspace.Dispose()
