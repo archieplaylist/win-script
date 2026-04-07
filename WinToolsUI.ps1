@@ -28,6 +28,7 @@ if (-not $RunHidden) {
 
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName System.Windows.Forms
 
 # --- Pre-flight Check: Ensure Winget is Installed ---
 $script:WingetMissing = $false
@@ -904,6 +905,18 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                     </WrapPanel>
                                 </StackPanel>
                             </Border>
+
+                            <!-- Box 7 -->
+                            <Border Background="{StaticResource ControlBackground}" BorderBrush="{StaticResource ControlBorder}" BorderThickness="1" CornerRadius="5" Padding="15" Margin="0,0,10,15">
+                                <StackPanel>
+                                    <TextBlock Text="ODBC &amp; Database Tools" FontWeight="SemiBold" FontSize="14" Margin="0,0,0,10"/>
+                                    <TextBlock Text="Backup and restore 32-bit and 64-bit ODBC Data Sources (System &amp; User DSNs)." TextWrapping="Wrap" Foreground="#AAAAAA" Margin="0,0,0,10" Height="35"/>
+                                    <WrapPanel>
+                                        <Button Name="UtilExportODBCBtn" Content="Export ODBC Data Sources" Padding="10,8" Margin="0,0,10,10"/>
+                                        <Button Name="UtilImportODBCBtn" Content="Import ODBC Data Sources" Padding="10,8" Margin="0,0,10,10"/>
+                                    </WrapPanel>
+                                </StackPanel>
+                            </Border>
                         </UniformGrid>
                         
                     </StackPanel>
@@ -996,6 +1009,8 @@ $UtilInstallChocoBtn = $Window.FindName("UtilInstallChocoBtn")
 $UtilDiskCleanupBtn = $Window.FindName("UtilDiskCleanupBtn")
 $UtilClearLogsBtn = $Window.FindName("UtilClearLogsBtn")
 $UtilIconCacheBtn = $Window.FindName("UtilIconCacheBtn")
+$UtilExportODBCBtn = $Window.FindName("UtilExportODBCBtn")
+$UtilImportODBCBtn = $Window.FindName("UtilImportODBCBtn")
 
 # Privacy & Optimize UI Map
 $PrivacyAdminWarning = $Window.FindName("PrivacyAdminWarning")
@@ -1180,6 +1195,8 @@ if ($isActualAdmin) {
     $UtilDiskCleanupBtn.IsEnabled = $false
     $UtilClearLogsBtn.IsEnabled = $false
     $UtilIconCacheBtn.IsEnabled = $false
+    $UtilExportODBCBtn.IsEnabled = $false
+    $UtilImportODBCBtn.IsEnabled = $false
     
     # Disable Optimize (Privacy/Performance) if not admin
     $PrivacyAdminWarning.Visibility = 'Visible'
@@ -1309,8 +1326,10 @@ $bgJobBlock = {
             $barCount = [math]::Floor($pct / 5)
             if ($barCount -gt 20) { $barCount = 20 }
             if ($barCount -lt 0) { $barCount = 0 }
-            $bars = "█" * $barCount
-            $spaces = "▒" * (20 - $barCount)
+            
+            # Safely generate blocks using Unicode to prevent encoding parser errors
+            $bars = ([char]0x2588).ToString() * $barCount
+            $spaces = ([char]0x2592).ToString() * (20 - $barCount)
             
             # Send with a special [PROGRESS] tag so the UI knows to overwrite the line
             $Hash.LogQueue.Enqueue("[PROGRESS] Progress: [$bars$spaces] $pct%")
@@ -1329,8 +1348,10 @@ $bgJobBlock = {
                     $barCount = [math]::Floor($pct / 5)
                     if ($barCount -gt 20) { $barCount = 20 }
                     if ($barCount -lt 0) { $barCount = 0 }
-                    $bars = "█" * $barCount
-                    $spaces = "▒" * (20 - $barCount)
+                    
+                    # Safely generate blocks using Unicode to prevent encoding parser errors
+                    $bars = ([char]0x2588).ToString() * $barCount
+                    $spaces = ([char]0x2592).ToString() * (20 - $barCount)
                     
                     $Hash.LogQueue.Enqueue("[PROGRESS] Downloading: [$bars$spaces] $pct% ($c / $t)")
                 }
@@ -1346,7 +1367,9 @@ $bgJobBlock = {
         
         # 4. Ignore isolated spinner characters and stray raw blocks
         if ($str -in @('\', '|', '/', '-')) { return }
-        if ($str -match '[█▒▓░]') { return }
+        
+        # Safely match block characters using regex Unicode escapes
+        if ($str -match '[\u2588\u2591\u2592\u2593]') { return }
         
         $Hash.LogQueue.Enqueue($str)
     }
@@ -2099,6 +2122,70 @@ $bgJobBlock = {
                     $Hash.Result = "Error: SDIO executable missing."
                 }
             }
+            'UtilExportODBC' {
+                $folder = $Query
+                $Hash.LogQueue.Enqueue(">>> Exporting ODBC Data Sources to: $folder")
+                
+                $exports = @(
+                    @{ Name = "System_64bit"; Path = "HKLM\SOFTWARE\ODBC\ODBC.INI" },
+                    @{ Name = "System_32bit"; Path = "HKLM\SOFTWARE\WOW6432Node\ODBC\ODBC.INI" },
+                    @{ Name = "User"; Path = "HKCU\Software\ODBC\ODBC.INI" }
+                )
+                
+                $successCount = 0
+                foreach ($exp in $exports) {
+                    $file = Join-Path $folder "ODBC_Backup_$($exp.Name).reg"
+                    $Hash.LogQueue.Enqueue("-> Exporting $($exp.Name) to $file...")
+                    
+                    # Run reg.exe to export safely
+                    $procInfo = New-Object System.Diagnostics.ProcessStartInfo
+                    $procInfo.FileName = "reg.exe"
+                    $procInfo.Arguments = "export `"$($exp.Path)`" `"$file`" /y"
+                    $procInfo.RedirectStandardOutput = $true
+                    $procInfo.RedirectStandardError = $true
+                    $procInfo.UseShellExecute = $false
+                    $procInfo.CreateNoWindow = $true
+                    
+                    $process = [System.Diagnostics.Process]::Start($procInfo)
+                    $process.WaitForExit()
+                    
+                    if ($process.ExitCode -eq 0) {
+                        $Hash.LogQueue.Enqueue("   [OK] Exported successfully.")
+                        $successCount++
+                    } else {
+                        $err = $process.StandardError.ReadToEnd().Trim()
+                        $Hash.LogQueue.Enqueue("   [WARNING] Export failed or key does not exist (Code: $($process.ExitCode)). Details: $err")
+                    }
+                }
+                $Hash.Result = "Success"
+            }
+            'UtilImportODBC' {
+                $files = $Query
+                $Hash.LogQueue.Enqueue(">>> Importing ODBC Data Sources from $($files.Count) file(s)...")
+                
+                foreach ($file in $files) {
+                    $Hash.LogQueue.Enqueue("-> Importing: $file")
+                    
+                    # Run reg.exe to import safely
+                    $procInfo = New-Object System.Diagnostics.ProcessStartInfo
+                    $procInfo.FileName = "reg.exe"
+                    $procInfo.Arguments = "import `"$file`""
+                    $procInfo.RedirectStandardOutput = $true
+                    $procInfo.RedirectStandardError = $true
+                    $procInfo.UseShellExecute = $false
+                    $procInfo.CreateNoWindow = $true
+                    
+                    $process = [System.Diagnostics.Process]::Start($procInfo)
+                    $process.WaitForExit()
+                    
+                    if ($process.ExitCode -eq 0) {
+                        $Hash.LogQueue.Enqueue("   [OK] Imported successfully.")
+                    } else {
+                        $Hash.LogQueue.Enqueue("   [ERROR] Import failed. Ensure it is a valid .reg file.")
+                    }
+                }
+                $Hash.Result = "Success"
+            }
             'ApplyOptimizations' {
                 if ($CreateRestore) {
                     $Hash.LogQueue.Enqueue(">>> Creating System Restore Point before applying optimizations...")
@@ -2633,7 +2720,7 @@ function Start-WingetJob($Action, $Query, $Id, $StatusMsg, $IsAdmin = $false, $C
     while ($syncHash.LogQueue.TryDequeue([ref]$dummy)) {}
 
     # Auto-expand the log panel if we are making system changes
-    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilDisableLongPath', 'UtilResetNet', 'UtilSMB', 'UtilDisableSMB', 'UtilFileSharing', 'UtilDisableFileSharing', 'UtilDriverUpdate', 'UtilSDIO', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs', 'ApplyOptimizations')) {
+    if ($Action -in @('Install', 'Uninstall', 'Update', 'UtilSystemScan', 'UtilResetWU', 'UtilRestorePoint', 'UtilLongPath', 'UtilDisableLongPath', 'UtilResetNet', 'UtilSMB', 'UtilDisableSMB', 'UtilFileSharing', 'UtilDisableFileSharing', 'UtilDriverUpdate', 'UtilSDIO', 'UtilWingetRepair', 'UtilStoreRepair', 'UtilDiskCleanup', 'UtilIconCache', 'UtilClearLogs', 'ApplyOptimizations', 'UtilExportODBC', 'UtilImportODBC')) {
         $LogExpander.IsExpanded = $true
     }
     
@@ -2960,6 +3047,8 @@ $timer.Add_Tick({
                     $StatusText.Text = if ($res -match "Reboot") { "Drivers installed! System reboot required." } else { "Driver scan and update process completed." } 
                 }
                 'UtilSDIO'         { $StatusText.Text = "Snappy Driver Installer opened." }
+                'UtilExportODBC'   { $StatusText.Text = "ODBC Data Sources exported successfully." }
+                'UtilImportODBC'   { $StatusText.Text = "ODBC Data Sources imported successfully." }
                 'ApplyOptimizations' { $StatusText.Text = "Optimization & Customization settings applied successfully." }
             }
         }
@@ -3627,6 +3716,28 @@ $UtilDriverBtn.Add_Click({
 $UtilSDIOBtn.Add_Click({
     $msgResult = [System.Windows.MessageBox]::Show("This will launch Snappy Driver Installer Origin (SDIO).`n`nIf this is your first time, it will automatically download the tool and extract it to an 'SDIO' folder next to this app.`n`nContinue?", "Snappy Driver Installer", [System.Windows.MessageBoxButton]::YesNo, [System.Windows.MessageBoxImage]::Question)
     if ($msgResult -eq 'Yes') { Start-WingetJob -Action "UtilSDIO" -Query "" -Id "" -StatusMsg "Initializing Snappy Driver Installer... Please wait." }
+})
+
+$UtilExportODBCBtn.Add_Click({
+    $fbd = New-Object System.Windows.Forms.FolderBrowserDialog
+    $fbd.Description = "Select a folder to save your ODBC Registry backups."
+    
+    if ($fbd.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK) {
+        $folder = $fbd.SelectedPath
+        Start-WingetJob -Action "UtilExportODBC" -Query $folder -Id "" -StatusMsg "Exporting ODBC Data Sources..."
+    }
+})
+
+$UtilImportODBCBtn.Add_Click({
+    $ofd = New-Object Microsoft.Win32.OpenFileDialog
+    $ofd.Filter = "Registry Files (*.reg)|*.reg|All Files (*.*)|*.*"
+    $ofd.Multiselect = $true
+    $ofd.Title = "Select the ODBC .reg backup files to import"
+    
+    if ($ofd.ShowDialog() -eq $true) {
+        $files = $ofd.FileNames
+        Start-WingetJob -Action "UtilImportODBC" -Query $files -Id "" -StatusMsg "Importing ODBC Data Sources..."
+    }
 })
 
 # --- Network Connection Check & Offline Restrictions ---
