@@ -467,7 +467,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="40" Header="✓">
+                                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="40" Header="&#x2713;">
                                         <DataGridCheckBoxColumn.ElementStyle>
                                             <Style TargetType="CheckBox">
                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -502,7 +502,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
                                     </Style>
                                 </DataGrid.RowStyle>
                                 <DataGrid.Columns>
-                                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="40" Header="✓">
+                                    <DataGridCheckBoxColumn Binding="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Width="40" Header="&#x2713;">
                                         <DataGridCheckBoxColumn.ElementStyle>
                                             <Style TargetType="CheckBox">
                                                 <Setter Property="HorizontalAlignment" Value="Center"/>
@@ -1437,9 +1437,9 @@ $bgJobBlock = {
                     $val = $line.Substring($start, $len).Trim()
                     
                     # Strip the ugly ellipsis and OEM encoding artifacts safely using Regex Unicode Hex
-                    $val = $val -replace '(\u0393\u00C7\u00AA)+$', '' # Removes ΓÇª
-                    $val = $val -replace '(\u0393\u00C7\u00F6)+$', '' # Removes ΓÇö
-                    $val = $val -replace '\u2026+$', ''             # Removes …
+                    $val = $val -replace '(\u0393\u00C7\u00AA)+$', '' # Removes OEM ellipsis artifact
+                    $val = $val -replace '(\u0393\u00C7\u00F6)+$', '' # Removes OEM dash artifact
+                    $val = $val -replace '\u2026+$', ''             # Removes standard ellipsis
                     
                     $cols += $val.Trim()
                 }
